@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Monsoon Prediction Competition • Forecast the North American Monsoon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
+        
+        :root {
+            --storm: #0f172a;
+            --deep: #1e2937;
+        }
+        
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        
+        .heading-font {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+
+        .monsoon-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #1e2937 50%, #0f172a 100%);
+        }
+
+        .storm-blue {
+            color: #38bdf8;
+        }
+
+        .desert-accent {
+            color: #f97316;
+        }
+
+        .section-header {
+            font-size: clamp(2.25rem, 5vw, 3.25rem);
+            line-height: 1.05;
+            font-weight: 600;
+            letter-spacing: -0.04em;
+        }
+
+        .nav-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .nav-link:hover {
+            color: #f97316;
+            transform: translateY(-1px);
+        }
+
+        .weather-card {
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                       box-shadow 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        .weather-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+
+        .gallery-img {
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), 
+                       box-shadow 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .gallery-img:hover {
+            transform: scale(1.015);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.2), 0 8px 10px -6px rgb(0 0 0 / 0.2);
+        }
+
+        .stat-number {
+            font-variant-numeric: tabular-nums;
+        }
+
+        .monsoon-bg {
+            background-image: 
+                radial-gradient(circle at 25% 30%, rgba(56, 189, 248, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 75% 70%, rgba(249, 115, 22, 0.05) 0%, transparent 60%);
+        }
+
+        .science-fact {
+            border-left: 3px solid #f97316;
+        }
+
+        .canvas-container {
+            background: #020617;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+                        inset 0 1px 0 0 rgba(255,255,255,0.06);
+        }
+
+        .viz-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .modal {
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+
+        .radar-sweep {
+            animation: radarSweep 4s linear infinite;
+        }
+
+        .nav-scrolled {
+            background-color: rgba(15, 23, 42, 0.96);
+            backdrop-filter: blur(12px);
+        }
+
+        .desert-texture {
+            background-image: url('data:image/svg+xml,%3Csvg width=%2260%22 height=%2260%22 viewBox=%220 0 60 60%22 xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cg fill-rule=%22evenodd%22%3E%3Cpath fill=%22%231e2937%22 fill-opacity=%220.4%22 d=%22M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-10V8h-2v16h-4v2h4v4h2v-4h4v-2h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 6v-4H4v4H0v2h4v4h2V8h4V6H6z%22/%3E%3C/g%3E%3C/svg%27');
+            background-size: 60px 60px;
+        }
+
+        .storm-divider {
+            background: linear-gradient(to right, transparent, #f97316, transparent);
+            height: 1px;
+            opacity: 0.3;
+        }
+
+        .forecast-chip {
+            background: rgba(249, 115, 22, 0.1);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+            color: #fed7aa;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <!-- NAVBAR -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 transition-all duration-300">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-8 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <div class="flex items-center gap-x-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/50">
+                            <i class="fa-solid fa-cloud-bolt text-white text-2xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-xl tracking-tighter heading-font">2026 MPC</div>
+                            <div class="text-[10px] text-slate-500 -mt-1">MONSOON PREDICTION COMPETITION</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Nav -->
+                <div class="hidden md:flex items-center gap-x-9 text-sm">
+                    <a href="#science" class="nav-link text-slate-300 hover:text-white font-medium">The Science</a>
+                    <a href="#onset" class="nav-link text-slate-300 hover:text-white font-medium">Onset Criteria</a>
+                    <a href="#visuals" class="nav-link text-slate-300 hover:text-white font-medium">Visualize</a>
+                    <a href="#enter" class="nav-link text-slate-300 hover:text-white font-medium">The Challenge</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                       target="_blank"
+                       class="hidden md:inline-flex items-center gap-x-2 px-5 py-2.5 rounded-2xl bg-white text-slate-950 font-semibold text-sm hover:bg-amber-100 transition-colors active:scale-[0.985]">
+                        <span>Enter Now</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </a>
+                    
+                    <!-- Mobile Menu -->
+                    <button id="mobile-menu-btn"
+                            class="md:hidden w-10 h-10 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-slate-950 px-6 py-4">
+            <div class="flex flex-col gap-y-1 text-sm">
+                <a href="#science" class="mobile-nav-link px-4 py-3 rounded-2xl hover:bg-white/5">The Science</a>
+                <a href="#onset" class="mobile-nav-link px-4 py-3 rounded-2xl hover:bg-white/5">Onset Criteria</a>
+                <a href="#visuals" class="mobile-nav-link px-4 py-3 rounded-2xl hover:bg-white/5">Visualize the Monsoon</a>
+                <a href="#enter" class="mobile-nav-link px-4 py-3 rounded-2xl hover:bg-white/5">The Challenge</a>
+                
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="mt-3 mx-1 flex items-center justify-center gap-x-2 px-5 py-3 rounded-2xl bg-white text-slate-950 font-semibold text-sm active:bg-amber-100">
+                    Enter the Competition
+                    <i class="fa-solid fa-arrow-right"></i>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- HERO -->
+    <header class="relative min-h-[100dvh] flex items-center justify-center pt-16 overflow-hidden">
+        <!-- Hero Background Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="assets/images/2.jpg" 
+                 alt="Epic North American Monsoon over Sonoran Desert with towering storms and dramatic light" 
+                 class="w-full h-full object-cover">
+            <div class="absolute inset-0 bg-gradient-to-b from-slate-950/70 via-slate-950/80 to-slate-950"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(#1e2937_0.8px,transparent_1px)] bg-[length:5px_5px] opacity-40"></div>
+        </div>
+
+        <div class="relative z-10 max-w-5xl mx-auto px-6 text-center pt-12 pb-20">
+            <div class="inline-flex items-center gap-x-2 px-4 py-1.5 rounded-3xl bg-white/10 backdrop-blur-xl border border-white/20 mb-6">
+                <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+                <span class="text-xs font-semibold tracking-[2px] text-emerald-300">NOW OPEN FOR ENTRIES</span>
+            </div>
+
+            <h1 class="heading-font text-6xl md:text-7xl lg:text-7xl leading-[0.96] font-semibold tracking-tighter mb-4">
+                2026 MONSOON<br>PREDICTION<br>COMPETITION
+            </h1>
+            
+            <p class="max-w-xl mx-auto text-2xl md:text-3xl text-slate-300 font-light tracking-tight mb-3">
+                When will the rains arrive?
+            </p>
+            <p class="max-w-md mx-auto text-lg text-slate-400 mb-9">
+                Predict the onset of the North American Monsoon and test your forecasting skill against one of meteorology's greatest seasonal challenges.
+            </p>
+
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="group w-full sm:w-auto inline-flex items-center justify-center gap-x-3 px-9 py-4 rounded-3xl bg-orange-600 hover:bg-orange-500 active:bg-orange-700 transition-all font-semibold text-lg shadow-xl shadow-orange-950/60 hover:shadow-2xl">
+                    <span>SUBMIT YOUR FORECAST</span>
+                    <i class="fa-solid fa-arrow-right group-active:translate-x-0.5 transition-transform"></i>
+                </a>
+                
+                <a href="#visuals" 
+                   class="w-full sm:w-auto inline-flex items-center justify-center gap-x-2.5 px-8 py-4 rounded-3xl border border-white/30 hover:bg-white/5 text-white font-medium transition-colors">
+                    <i class="fa-solid fa-play text-orange-400"></i>
+                    <span>See the Monsoon in Action</span>
+                </a>
+            </div>
+
+            <div class="mt-10 flex justify-center">
+                <div class="flex items-center gap-x-8 text-xs uppercase tracking-[1.5px] text-slate-500">
+                    <div>SCIENTIFIC</div>
+                    <div class="w-px h-2.5 bg-white/30"></div>
+                    <div>FORECASTER-DRIVEN</div>
+                    <div class="w-px h-2.5 bg-white/30"></div>
+                    <div>OPEN TO ALL</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll indicator -->
+        <div class="absolute bottom-9 left-1/2 -translate-x-1/2 hidden lg:flex flex-col items-center gap-y-1.5 text-[10px] tracking-[2px] text-slate-500">
+            <div>SCROLL TO EXPLORE</div>
+            <i class="fa-solid fa-chevron-down animate-bounce"></i>
+        </div>
+    </header>
+
+    <!-- TRUST / QUICK STATS -->
+    <div class="border-b border-white/10 bg-slate-900/60">
+        <div class="max-w-screen-2xl mx-auto px-8 py-5 grid grid-cols-2 md:grid-cols-4 gap-y-6 text-center">
+            <div>
+                <div class="text-3xl font-semibold tabular-nums text-white">50%+</div>
+                <div class="text-xs text-slate-400 mt-0.5 tracking-wide">OF ANNUAL RAINFALL</div>
+                <div class="text-[10px] text-slate-500">in the Desert Southwest</div>
+            </div>
+            <div>
+                <div class="text-3xl font-semibold tabular-nums text-white">~July 7</div>
+                <div class="text-xs text-slate-400 mt-0.5 tracking-wide">CLIMATOLOGICAL ONSET</div>
+                <div class="text-[10px] text-slate-500">Tucson area (KTUS)</div>
+            </div>
+            <div>
+                <div class="text-3xl font-semibold tabular-nums text-white">3 DAYS</div>
+                <div class="text-xs text-slate-400 mt-0.5 tracking-wide">CLASSIC ONSET RULE</div>
+                <div class="text-[10px] text-slate-500">≥54°F average dewpoint (KTUS)</div>
+            </div>
+            <div>
+                <div class="text-3xl font-semibold tabular-nums text-white">100+ mph</div>
+                <div class="text-xs text-slate-400 mt-0.5 tracking-wide">MICROBURST WINDS</div>
+                <div class="text-[10px] text-slate-500">Common monsoon hazard</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- INTRO / WHAT IS IT -->
+    <section id="science" class="max-w-screen-2xl mx-auto px-8 pt-20 pb-16">
+        <div class="max-w-3xl mb-10">
+            <div class="uppercase text-orange-500 text-xs font-bold tracking-[2.5px] mb-3">THE NORTH AMERICAN MONSOON</div>
+            <h2 class="section-header text-white">A seasonal transformation<br>of the desert Southwest.</h2>
+        </div>
+
+        <div class="grid md:grid-cols-12 gap-x-8 gap-y-10 items-start">
+            <!-- Text -->
+            <div class="md:col-span-7 text-[15px] leading-relaxed text-slate-300">
+                <p class="mb-6">Each summer, the intense heating of the North American continent shifts the subtropical high-pressure ridge northward. This allows deep tropical moisture—primarily surging up the Gulf of California—to invade the desert Southwest. The result is a dramatic change from the hot, bone-dry early summer to frequent afternoon and evening thunderstorms.</p>
+                
+                <p class="mb-6">The North American Monsoon (also called the Southwest Monsoon) delivers more than half of the region's annual precipitation in just a few months. It is not a gentle rain. It is violent, localized convection capable of producing flash floods, massive haboobs, and powerful microbursts that rival the strength of many hurricanes' winds.</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-8">
+                    <div class="science-fact pl-4 py-1">
+                        <div class="font-semibold text-orange-400">Moisture Source</div>
+                        <div class="text-sm text-slate-400 mt-0.5">Gulf of California "surges" are the dominant low-level moisture transport mechanism.</div>
+                    </div>
+                    <div class="science-fact pl-4 py-1">
+                        <div class="font-semibold text-orange-400">Diurnal Cycle</div>
+                        <div class="text-sm text-slate-400 mt-0.5">Storms typically fire over mountains in the afternoon and move onto the lower deserts by evening.</div>
+                    </div>
+                    <div class="science-fact pl-4 py-1">
+                        <div class="font-semibold text-orange-400">High Stakes</div>
+                        <div class="text-sm text-slate-400 mt-0.5">Critical for water supply, wildfire season end, and agriculture—but also deadly when underestimated.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right side image + caption -->
+            <div class="md:col-span-5">
+                <div class="weather-card rounded-3xl overflow-hidden border border-white/10 shadow-2xl">
+                    <img src="assets/images/1.jpg" alt="GOES satellite view of moisture surge from Gulf of California during North American Monsoon onset" class="w-full">
+                    <div class="px-5 py-4 bg-slate-900/80 text-xs border-t border-white/10">
+                        <span class="font-medium text-slate-300">GOES water vapor imagery</span> showing classic monsoon moisture plume surging from the Gulf of California into Arizona and New Mexico.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ONSET DEFINITION -->
+    <section id="onset" class="border-y border-white/10 bg-slate-900/70 py-16">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <div class="max-w-3xl mb-9">
+                <div class="uppercase text-xs tracking-[2px] font-semibold text-orange-500 mb-2">THE FORECASTER'S DEFINITION</div>
+                <h3 class="text-4xl leading-none font-semibold tracking-tighter">How do we know the monsoon has started?</h3>
+            </div>
+
+            <div class="grid lg:grid-cols-2 gap-x-10 gap-y-10">
+                <!-- Classic Criteria - Tucson focused -->
+                <div class="rounded-3xl bg-slate-950 border border-white/10 p-8">
+                    <div class="flex items-center gap-x-3 mb-6">
+                        <div class="px-3 py-1 rounded-full forecast-chip text-xs font-bold">LEGACY OPERATIONAL RULE</div>
+                    </div>
+                    
+                    <h4 class="font-semibold text-2xl tracking-tight mb-4">Tucson 54°F Dewpoint Rule</h4>
+                    <p class="text-slate-300 mb-5">The monsoon onset at Tucson is declared on the first day of the first three consecutive days when the daily average surface dewpoint temperature at KTUS reaches or exceeds <span class="font-semibold text-amber-400">54°F</span>.</p>
+                    
+                    <p class="text-slate-300 mb-6">This threshold, adjusted for Tucson's higher elevation, has long served as a reliable operational marker for the arrival of sufficient low-level moisture to support organized thunderstorms across southern Arizona.</p>
+
+                    <div class="text-xs text-slate-400 border-l-2 border-orange-500/50 pl-3">
+                        This legacy criterion remains one of the most referenced benchmarks among forecasters for tracking the true meteorological start of the North American Monsoon in the Tucson area.
+                    </div>
+                </div>
+
+                <div>
+                    <div class="mb-6">
+                        <div class="uppercase text-xs font-semibold tracking-wider text-slate-400 mb-2">MODERN CONTEXT</div>
+                        <p class="text-slate-300">Since 2008, the NWS uses a fixed <span class="font-medium">June 15 – September 30</span> "monsoon season" for products and messaging. However, the actual meteorological onset—the first significant Gulf surge and thunderstorm activity—still varies dramatically year to year, typically occurring between late June and mid-July in southern Arizona.</p>
+                    </div>
+
+                    <div class="rounded-3xl border border-white/10 bg-slate-950 p-6 text-sm">
+                        <div class="font-medium mb-2.5 text-orange-400">Why predicting onset matters</div>
+                        <ul class="space-y-1.5 text-slate-400">
+                            <li class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i> <span>Fire weather planning and resource allocation</span></li>
+                            <li class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i> <span>Flash flood preparedness in urban and desert areas</span></li>
+                            <li class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i> <span>Understanding interannual variability and climate signals</span></li>
+                            <li class="flex gap-2"><i class="fa-solid fa-check text-emerald-400 mt-1 text-xs"></i> <span>Testing real-world forecast skill at subseasonal timescales</span></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- THE CHALLENGE -->
+    <section id="enter" class="max-w-screen-2xl mx-auto px-8 py-20">
+        <div class="max-w-4xl mx-auto text-center mb-12">
+            <div class="inline-block px-4 py-1 rounded-2xl bg-orange-500/10 text-orange-400 text-sm font-semibold tracking-wider mb-4">THE 2026 CHALLENGE</div>
+            <h2 class="section-header tracking-tighter mb-4">Can you forecast<br>the pulse of the desert?</h2>
+            <p class="text-xl text-slate-400 max-w-lg mx-auto">Predict the 2026 monsoon onset at Tucson plus two additional KTUS metrics. Test your skill against one of the Southwest's toughest forecasting challenges.</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-3xl p-9 md:p-11">
+            <div class="space-y-6 text-[15px]">
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-calendar text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">Tucson monsoon onset (54°F dewpoint rule at KTUS)</div>
+                        <div class="text-slate-400 text-sm">First day of three consecutive days with average dewpoint ≥54°F.</div>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-bolt text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">First thunderstorms observed at KTUS</div>
+                        <div class="text-slate-400 text-sm">Date and time of the first thunderstorm reported at Tucson International Airport.</div>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-cloud-rain text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">Total accumulated precipitation at KTUS</div>
+                        <div class="text-slate-400 text-sm">Seasonal rainfall total at Tucson International Airport (June 15 – September 30).</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-9 pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="flex-1 inline-flex justify-center items-center gap-x-2.5 px-7 py-[17px] bg-white hover:bg-amber-50 active:bg-white text-slate-950 rounded-2xl font-bold text-base transition-all">
+                    <span>ENTER THE 2026 COMPETITION</span>
+                </a>
+                <a href="#visuals" class="flex-1 sm:flex-none inline-flex justify-center items-center gap-x-2 px-7 py-[17px] border border-white/30 hover:bg-white/5 rounded-2xl font-medium transition-colors">
+                    Explore the visuals first
+                </a>
+            </div>
+            
+            <p class="text-center text-xs text-slate-500 mt-5">The official entry form contains full rules, submission deadline, and scoring methodology.</p>
+        </div>
+    </section>
+
+    <!-- VISUALS SECTION -->
+    <section id="visuals" class="bg-slate-900 border-t border-white/10 py-16">
+        <div class="max-w-screen-2xl mx-auto px-8">
+            <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-y-4 mb-10">
+                <div>
+                    <div class="uppercase text-xs font-bold tracking-[2px] text-orange-500 mb-2">EXPERIENCE IT</div>
+                    <h2 class="section-header text-white tracking-tighter">The monsoon in motion.</h2>
+                </div>
+                <div class="max-w-sm text-slate-400 text-[15px]">
+                    Key phenomena and processes that define the North American Monsoon in southern Arizona.
+                </div>
+            </div>
+
+            <!-- Compact Phenomena List -->
+            <div class="mb-10">
+                <div class="flex items-center justify-between mb-4 px-1">
+                    <div class="text-sm font-semibold tracking-wide text-slate-300">MONSOON PHENOMENA NEAR TUCSON</div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/3.jpg" alt="Microburst" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Microburst</span>
+                            <span class="text-orange-400 text-[10px] font-mono">HAZARD</span>
+                        </div>
+                    </div>
+
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/6.jpg" alt="Haboob" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Haboob</span>
+                            <span class="text-amber-400 text-[10px] font-mono">OUTFLOW</span>
+                        </div>
+                    </div>
+
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/8.jpg" alt="Heavy monsoon rain" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Heavy Rain</span>
+                            <span class="text-sky-400 text-[10px] font-mono">CONVECTION</span>
+                        </div>
+                    </div>
+
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/9.jpg" alt="Monsoon flash flooding" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Flash Flood</span>
+                            <span class="text-red-400 text-[10px] font-mono">HAZARD</span>
+                        </div>
+                    </div>
+
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/4.jpg" alt="Lightning" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Lightning</span>
+                            <span class="text-sky-400 text-[10px] font-mono">CONVECTION</span>
+                        </div>
+                    </div>
+
+                    <div class="group overflow-hidden rounded-2xl border border-white/10 bg-slate-950">
+                        <img src="assets/images/5.jpg" alt="Radar" class="w-full h-28 object-cover opacity-90">
+                        <div class="px-3 py-2 text-xs flex justify-between items-center">
+                            <span class="font-medium">Pulse Storms</span>
+                            <span class="text-emerald-400 text-[10px] font-mono">RADAR</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-slate-500 mt-2 px-1">Scenes from North American Monsoon activity in southern Arizona</div>
+            </div>
+
+            <!-- Interactive Animations -->
+            <div>
+                <div class="px-1 mb-4">
+                    <div class="text-sm font-semibold tracking-wide text-slate-300">INTERACTIVE VISUALIZATIONS</div>
+                </div>
+
+                <div class="grid lg:grid-cols-3 gap-4">
+                    <!-- Microburst Animation -->
+                    <div class="canvas-container p-4">
+                        <div class="flex items-center justify-between mb-3 px-2">
+                            <div>
+                                <div class="font-semibold tracking-tight">Microburst Simulation</div>
+                                <div class="viz-label text-orange-400">Evaporative cooling • strong outflow winds</div>
+                            </div>
+                            <button onclick="resetMicroburst()" 
+                                    class="text-[10px] px-3 py-1 rounded-xl border border-white/20 hover:bg-white/5 transition-colors flex items-center gap-x-1.5">
+                                <i class="fa-solid fa-redo text-[10px]"></i>
+                                <span>RESET</span>
+                            </button>
+                        </div>
+                        <canvas id="microburst-canvas" width="400" height="280" class="w-full rounded-2xl cursor-pointer"></canvas>
+                        <div class="px-2 mt-2 text-xs text-slate-400">Click to simulate a downburst</div>
+                    </div>
+
+                    <!-- Radar Animation -->
+                    <div class="canvas-container p-4">
+                        <div class="flex items-center justify-between mb-3 px-2">
+                            <div>
+                                <div class="font-semibold tracking-tight">Monsoon Radar Loop</div>
+                                <div class="viz-label text-emerald-400">Pulse storms • Typical reflectivity</div>
+                            </div>
+                            <button onclick="toggleRadar()" 
+                                    class="text-[10px] px-3 py-1 rounded-xl border border-white/20 hover:bg-white/5 transition-colors flex items-center gap-x-1.5">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span id="radar-btn-text">PAUSE</span>
+                            </button>
+                        </div>
+                        <canvas id="radar-canvas" width="400" height="280" class="w-full rounded-2xl"></canvas>
+                        <div class="px-2 mt-2 text-xs text-slate-400">Stylized NEXRAD-style view of monsoon convection</div>
+                    </div>
+
+                    <!-- Moisture Surge -->
+                    <div class="canvas-container p-4">
+                        <div class="flex items-center justify-between mb-3 px-2">
+                            <div>
+                                <div class="font-semibold tracking-tight">Gulf Surge Animation</div>
+                                <div class="viz-label text-sky-400">Low-level moisture transport</div>
+                            </div>
+                            <button onclick="toggleSurge()" 
+                                    class="text-[10px] px-3 py-1 rounded-xl border border-white/20 hover:bg-white/5 transition-colors flex items-center gap-x-1.5">
+                                <i class="fa-solid fa-play text-[10px]"></i>
+                                <span id="surge-btn-text">PAUSE</span>
+                            </button>
+                        </div>
+                        <canvas id="surge-canvas" width="400" height="280" class="w-full rounded-2xl"></canvas>
+                        <div class="px-2 mt-2 text-xs text-slate-400">Moisture plume from Gulf of California</div>
+                    </div>
+                </div>
+                <div class="text-[10px] text-center text-slate-500 mt-3 tracking-wider">Stylized illustrations of common monsoon processes and hazards</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FINAL CTA -->
+    <section class="max-w-screen-2xl mx-auto px-8 py-20">
+        <div class="max-w-3xl mx-auto text-center">
+            <div class="mx-auto mb-6 w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center">
+                <i class="fa-solid fa-cloud-showers-heavy text-white text-4xl"></i>
+            </div>
+            
+            <h2 class="text-5xl font-semibold tracking-tighter mb-4">Ready to make your prediction?</h2>
+            <p class="text-xl text-slate-400 max-w-md mx-auto mb-8">The 2026 North American Monsoon will arrive on its own schedule. The question is — can you call it?</p>
+
+            <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+               target="_blank"
+               class="inline-flex items-center justify-center gap-x-3 group px-10 py-5 rounded-3xl bg-white text-xl font-semibold text-slate-950 hover:bg-amber-100 active:scale-[0.985] transition-all shadow-xl">
+                <span>OPEN ENTRY FORM</span>
+                <i class="fa-solid fa-external-link-alt text-base group-active:translate-x-0.5 transition"></i>
+            </a>
+            
+            <div class="mt-6 text-sm text-slate-500">Takes less than two minutes. All skill levels welcome.</div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-white/10 bg-slate-950 py-10 px-8 text-xs">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="flex flex-col md:flex-row justify-between gap-y-6 text-slate-500">
+                <div>
+                    <div class="font-medium text-slate-400">2026 Monsoon Prediction Competition</div>
+                    <div class="mt-1">A forecaster-led initiative to advance understanding of North American Monsoon variability.</div>
+                </div>
+                <div class="text-right text-[10px] space-y-0.5">
+                    <div>Images generated with Grok Imagine • Stylized visualizations of monsoon processes</div>
+                    <div>Entry form hosted on Microsoft Forms. Official rules and criteria are in the submission form.</div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+
+
+    <script>
+        // Tailwind script
+        function initializeTailwind() {
+            document.documentElement.style.setProperty('--accent', '#f97316');
+        }
+
+        // Navbar scroll effect
+        function initNavbar() {
+            const navbar = document.getElementById('navbar');
+            let lastScroll = 0;
+
+            window.addEventListener('scroll', () => {
+                const currentScroll = window.pageYOffset;
+                
+                if (currentScroll > 60) {
+                    navbar.classList.add('nav-scrolled', 'shadow-xl');
+                } else {
+                    navbar.classList.remove('nav-scrolled', 'shadow-xl');
+                }
+                
+                lastScroll = currentScroll;
+            });
+
+            // Mobile menu
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            mobileBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+                const icon = mobileBtn.querySelector('i');
+                icon.classList.toggle('fa-bars');
+                icon.classList.toggle('fa-times');
+            });
+
+            // Close mobile on nav click
+            document.querySelectorAll('.mobile-nav-link').forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                    const icon = mobileBtn.querySelector('i');
+                    icon.classList.add('fa-bars');
+                    icon.classList.remove('fa-times');
+                });
+            });
+        }
+
+        // ==================== CANVAS ANIMATIONS ====================
+
+        // 1. MICROBURST ANIMATION
+        let microburstCtx, microburstParticles = [], microburstRunning = false, microburstAnimationId;
+
+        function initMicroburst() {
+            const canvas = document.getElementById('microburst-canvas');
+            microburstCtx = canvas.getContext('2d', { alpha: true });
+
+            canvas.addEventListener('click', triggerMicroburst);
+
+            // Create initial ambient dust (subtle)
+            microburstParticles = [];
+            for (let i = 0; i < 28; i++) {
+                microburstParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.75,
+                    vx: (Math.random() - 0.5) * 0.2,
+                    vy: Math.random() * 0.35 + 0.15,
+                    size: Math.random() * 1.3 + 0.6,
+                    life: Math.random() * 70 + 90,
+                    type: 'ambient',
+                    alpha: Math.random() * 0.35 + 0.15
+                });
+            }
+            
+            drawMicroburst();
+            
+            // Gentle ambient animation
+            setInterval(() => {
+                if (!microburstRunning) {
+                    updateAmbientDust();
+                    drawMicroburst();
+                }
+            }, 80);
+        }
+
+        function updateAmbientDust() {
+            const canvas = document.getElementById('microburst-canvas');
+            microburstParticles.forEach(p => {
+                if (p.type === 'ambient') {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                    if (p.y > canvas.height * 0.88) {
+                        p.y = Math.random() * canvas.height * 0.35;
+                        p.x = Math.random() * canvas.width;
+                    }
+                }
+            });
+        }
+
+        function triggerMicroburst() {
+            const canvas = document.getElementById('microburst-canvas');
+            microburstRunning = true;
+            clearTimeout(microburstAnimationId);
+
+            // Clear ambient and create a more subtle downburst
+            microburstParticles = [];
+
+            // Rain column (center) - gentler
+            const centerX = canvas.width * 0.5;
+            for (let i = 0; i < 70; i++) {
+                microburstParticles.push({
+                    x: centerX + (Math.random() - 0.5) * 32,
+                    y: Math.random() * canvas.height * 0.55,
+                    vx: (Math.random() - 0.5) * 0.6,
+                    vy: 4.2 + Math.random() * 2.2,
+                    size: Math.random() * 1.6 + 0.9,
+                    life: 32 + Math.random() * 22,
+                    type: 'rain',
+                    alpha: 0.55 + Math.random() * 0.3
+                });
+            }
+
+            // Dust at impact zone - restrained
+            for (let i = 0; i < 32; i++) {
+                const spread = Math.random() * 48;
+                microburstParticles.push({
+                    x: centerX + (Math.random() - 0.5) * spread,
+                    y: canvas.height * 0.74 + Math.random() * 14,
+                    vx: (Math.random() - 0.5) * 1.8,
+                    vy: -0.7 + Math.random() * 1.1,
+                    size: Math.random() * 2.1 + 1.0,
+                    life: 44 + Math.random() * 28,
+                    type: 'dust',
+                    alpha: 0.5
+                });
+            }
+
+            animateMicroburst();
+        }
+
+        function animateMicroburst() {
+            const canvas = document.getElementById('microburst-canvas');
+            const ctx = microburstCtx;
+
+            microburstParticles = microburstParticles.filter(p => p.life > 0);
+
+            // Add more horizontal outflow particles (restrained)
+            if (microburstParticles.length < 160 && microburstRunning) {
+                const centerX = canvas.width * 0.5;
+                const groundY = canvas.height * 0.74;
+
+                for (let i = 0; i < 3; i++) {
+                    const dir = Math.random() > 0.5 ? 1 : -1;
+                    microburstParticles.push({
+                        x: centerX + dir * (10 + Math.random() * 18),
+                        y: groundY + Math.random() * 10,
+                        vx: dir * (1.6 + Math.random() * 2.8),
+                        vy: -0.5 + Math.random() * 0.9,
+                        size: Math.random() * 1.9 + 0.8,
+                        life: 32 + Math.random() * 22,
+                        type: 'outflow',
+                        alpha: 0.45 + Math.random() * 0.3
+                    });
+                }
+            }
+
+            // Update particles
+            microburstParticles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+
+                if (p.type === 'rain') {
+                    p.vy += 0.14; // accelerate
+                    if (p.y > canvas.height * 0.71) {
+                        p.vy *= 0.15;
+                        p.vx += (Math.random() - 0.5) * 1.9;
+                        p.type = 'splash';
+                    }
+                } else if (p.type === 'outflow' || p.type === 'dust') {
+                    p.vx *= 0.975;
+                    p.vy += 0.035;
+                    if (p.y > canvas.height * 0.91) p.vy = -Math.abs(p.vy) * 0.2;
+                }
+            });
+
+            drawMicroburst();
+
+            if (microburstParticles.length > 3 && microburstRunning) {
+                microburstAnimationId = setTimeout(animateMicroburst, 1000 / 52);
+            } else {
+                microburstRunning = false;
+            }
+        }
+
+        function drawMicroburst() {
+            const canvas = document.getElementById('microburst-canvas');
+            const ctx = microburstCtx;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Dark stormy sky gradient
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.72);
+            skyGrad.addColorStop(0, '#0a111f');
+            skyGrad.addColorStop(1, '#151e2f');
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height * 0.72);
+
+            // Desert floor
+            ctx.fillStyle = '#2c2116';
+            ctx.fillRect(0, canvas.height * 0.72, canvas.width, canvas.height * 0.28);
+
+            // Ground texture lines
+            ctx.strokeStyle = '#3c2f22';
+            ctx.lineWidth = 1;
+            for (let x = 0; x < canvas.width; x += 17) {
+                ctx.beginPath();
+                ctx.moveTo(x, canvas.height * 0.72);
+                ctx.lineTo(x + 11, canvas.height);
+                ctx.stroke();
+            }
+
+            // Draw particles
+            microburstParticles.forEach(p => {
+                const a = Math.max(0.06, p.alpha * (p.life / 58));
+                
+                if (p.type === 'rain' || p.type === 'splash') {
+                    ctx.fillStyle = `rgba(186, 202, 255, ${a})`;
+                    ctx.fillRect(p.x, p.y, p.size * 0.65, p.size * 1.8);
+                } else {
+                    // Dust / outflow - warm browns
+                    ctx.fillStyle = `rgba(188, 142, 92, ${a})`;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+
+            // Central downburst shaft highlight
+            if (microburstRunning) {
+                ctx.strokeStyle = 'rgba(200, 215, 255, 0.25)';
+                ctx.lineWidth = 22;
+                ctx.beginPath();
+                ctx.moveTo(canvas.width * 0.5, 0);
+                ctx.lineTo(canvas.width * 0.5, canvas.height * 0.74);
+                ctx.stroke();
+            }
+        }
+
+        function resetMicroburst() {
+            const canvas = document.getElementById('microburst-canvas');
+            microburstRunning = false;
+            clearTimeout(microburstAnimationId);
+
+            microburstParticles = [];
+            for (let i = 0; i < 65; i++) {
+                microburstParticles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.75,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: Math.random() * 0.6 + 0.25,
+                    size: Math.random() * 1.6 + 0.7,
+                    life: Math.random() * 60 + 80,
+                    type: 'ambient',
+                    alpha: Math.random() * 0.4 + 0.2
+                });
+            }
+            drawMicroburst();
+        }
+
+        // 2. RADAR ANIMATION
+        let radarCtx, radarAngle = 0, radarRunning = true, radarId, radarEchoes = [];
+
+        function initRadar() {
+            const canvas = document.getElementById('radar-canvas');
+            radarCtx = canvas.getContext('2d');
+
+            // Create realistic monsoon-like echoes (scattered pulse storms)
+            radarEchoes = [
+                { x: 0.32, y: 0.38, r: 38, intensity: 0.85, phase: 0 },
+                { x: 0.61, y: 0.29, r: 29, intensity: 0.95, phase: 1.3 },
+                { x: 0.47, y: 0.58, r: 22, intensity: 0.78, phase: 2.7 },
+                { x: 0.71, y: 0.51, r: 33, intensity: 0.91, phase: 0.9 },
+                { x: 0.25, y: 0.63, r: 19, intensity: 0.72, phase: 3.9 },
+                { x: 0.55, y: 0.74, r: 26, intensity: 0.83, phase: 1.7 }
+            ];
+
+            drawRadar();
+
+            function loop() {
+                if (!radarRunning) return;
+                radarAngle = (radarAngle + 1.35) % 360;
+                updateRadarEchoes();
+                drawRadar();
+                radarId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function updateRadarEchoes() {
+            radarEchoes.forEach((echo, i) => {
+                // Slow intensity pulsing and slight position drift (realistic cell evolution)
+                echo.phase += 0.018;
+                echo.intensity = 0.68 + Math.sin(echo.phase) * 0.27;
+                
+                // Very slow movement / growth typical of monsoon cells
+                if (i % 2 === 0) {
+                    echo.x += Math.cos(echo.phase * 0.6) * 0.0009;
+                    echo.y += Math.sin(echo.phase * 0.5) * 0.0007;
+                }
+                echo.r = 18 + Math.sin(echo.phase * 0.9) * 6;
+            });
+        }
+
+        function drawRadar() {
+            const canvas = document.getElementById('radar-canvas');
+            const ctx = radarCtx;
+            const w = canvas.width;
+            const h = canvas.height;
+            const cx = w / 2;
+            const cy = h / 2;
+            const maxR = Math.min(w, h) * 0.48;
+
+            ctx.fillStyle = '#020617';
+            ctx.fillRect(0, 0, w, h);
+
+            // Range rings + azimuth lines
+            ctx.strokeStyle = '#134e4b';
+            ctx.lineWidth = 1.25;
+            
+            for (let i = 1; i <= 4; i++) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, (maxR / 4) * i, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            // Faint radial lines
+            ctx.strokeStyle = '#134e4b';
+            for (let a = 0; a < 360; a += 30) {
+                const rad = (a * Math.PI) / 180;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy);
+                ctx.lineTo(cx + Math.cos(rad) * maxR, cy + Math.sin(rad) * maxR);
+                ctx.stroke();
+            }
+
+            // Draw echoes (monsoon cells)
+            radarEchoes.forEach(echo => {
+                const x = cx + (echo.x - 0.5) * maxR * 1.85;
+                const y = cy + (echo.y - 0.5) * maxR * 1.7;
+                const r = echo.r;
+
+                // Outer faint green
+                ctx.fillStyle = `rgba(52, 211, 153, ${echo.intensity * 0.18})`;
+                ctx.beginPath();
+                ctx.arc(x, y, r * 1.25, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core yellow-orange (higher reflectivity)
+                const coreGrad = ctx.createRadialGradient(x - r*0.2, y - r*0.2, r * 0.15, x, y, r);
+                coreGrad.addColorStop(0, `rgba(251, 191, 36, ${echo.intensity * 0.9})`);
+                coreGrad.addColorStop(0.55, `rgba(245, 158, 11, ${echo.intensity * 0.65})`);
+                coreGrad.addColorStop(1, `rgba(234, 88, 12, ${echo.intensity * 0.35})`);
+                
+                ctx.fillStyle = coreGrad;
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Very bright core pixels (reds)
+                ctx.fillStyle = `rgba(220, 38, 38, ${echo.intensity * 0.55})`;
+                ctx.beginPath();
+                ctx.arc(x - r * 0.18, y - r * 0.2, r * 0.42, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Radar sweep
+            const sweepRad = (radarAngle * Math.PI) / 180;
+            const sweepGrad = ctx.createLinearGradient(
+                cx, cy, 
+                cx + Math.cos(sweepRad) * maxR, 
+                cy + Math.sin(sweepRad) * maxR
+            );
+            sweepGrad.addColorStop(0, 'rgba(52, 211, 153, 0.0)');
+            sweepGrad.addColorStop(0.75, 'rgba(52, 211, 153, 0.65)');
+            sweepGrad.addColorStop(1, 'rgba(52, 211, 153, 0.0)');
+
+            ctx.strokeStyle = sweepGrad;
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + Math.cos(sweepRad) * maxR * 0.995, cy + Math.sin(sweepRad) * maxR * 0.995);
+            ctx.stroke();
+
+            // Bright sweep tip
+            ctx.fillStyle = 'rgba(163, 230, 197, 0.85)';
+            ctx.beginPath();
+            ctx.arc(cx + Math.cos(sweepRad) * maxR * 0.995, cy + Math.sin(sweepRad) * maxR * 0.995, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Center blip
+            ctx.fillStyle = '#14b8a6';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function toggleRadar() {
+            radarRunning = !radarRunning;
+            const btn = document.getElementById('radar-btn-text');
+            btn.textContent = radarRunning ? 'PAUSE' : 'RESUME';
+
+            if (radarRunning) {
+                const canvas = document.getElementById('radar-canvas');
+                const ctx = radarCtx;
+                
+                function loop() {
+                    if (!radarRunning) return;
+                    radarAngle = (radarAngle + 1.35) % 360;
+                    updateRadarEchoes();
+                    drawRadar();
+                    radarId = requestAnimationFrame(loop);
+                }
+                loop();
+            }
+        }
+
+        // 3. GULF SURGE / MOISTURE ANIMATION
+        let surgeCtx, surgeRunning = true, surgeParticles = [], surgeId;
+
+        function initSurge() {
+            const canvas = document.getElementById('surge-canvas');
+            surgeCtx = canvas.getContext('2d');
+
+            surgeParticles = [];
+            for (let i = 0; i < 42; i++) {
+                surgeParticles.push(createSurgeParticle(canvas));
+            }
+
+            drawSurge();
+
+            function loop() {
+                if (!surgeRunning) return;
+                updateSurge(canvas);
+                drawSurge();
+                surgeId = requestAnimationFrame(loop);
+            }
+            loop();
+        }
+
+        function createSurgeParticle(canvas) {
+            return {
+                x: Math.random() * canvas.width * 0.42,
+                y: canvas.height * (0.35 + Math.random() * 0.55),
+                vx: 0.9 + Math.random() * 1.7,
+                vy: (Math.random() - 0.5) * 0.65,
+                size: 11 + Math.random() * 22,
+                alpha: 0.22 + Math.random() * 0.33,
+                hue: 185 + Math.random() * 18
+            };
+        }
+
+        function updateSurge(canvas) {
+            surgeParticles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += (Math.random() - 0.5) * 0.03;
+
+                // Respawn when leaving right side (simulating continuous surge)
+                if (p.x > canvas.width * 0.97) {
+                    p.x = -28;
+                    p.y = canvas.height * (0.28 + Math.random() * 0.58);
+                    p.vx = 0.95 + Math.random() * 1.65;
+                }
+
+                // Gentle vertical bounds
+                if (p.y < canvas.height * 0.22) p.vy = Math.abs(p.vy);
+                if (p.y > canvas.height * 0.84) p.vy = -Math.abs(p.vy);
+            });
+        }
+
+        function drawSurge() {
+            const canvas = document.getElementById('surge-canvas');
+            const ctx = surgeCtx;
+
+            // Deep background
+            const bg = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            bg.addColorStop(0, '#020c1a');
+            bg.addColorStop(0.4, '#0a1628');
+            bg.addColorStop(1, '#0c1829');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Gulf of California hint (bottom left)
+            ctx.fillStyle = 'rgba(12, 74, 110, 0.55)';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height * 0.71);
+            ctx.quadraticCurveTo(canvas.width * 0.18, canvas.height * 0.83, 0, canvas.height);
+            ctx.fill();
+
+            // Draw moisture plume particles
+            surgeParticles.forEach(p => {
+                const grad = ctx.createRadialGradient(p.x, p.y, 1, p.x + 7, p.y - 5, p.size * 1.1);
+                grad.addColorStop(0, `hsla(${p.hue}, 85%, 82%, ${p.alpha})`);
+                grad.addColorStop(0.5, `hsla(${p.hue}, 75%, 68%, ${p.alpha * 0.6})`);
+                grad.addColorStop(1, 'hsla(190, 65%, 55%, 0.03)');
+
+                ctx.fillStyle = grad;
+                ctx.beginPath();
+                ctx.ellipse(p.x, p.y, p.size * 1.15, p.size * 0.6, p.vy * 0.6, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Flow arrows
+            ctx.strokeStyle = 'rgba(103, 232, 249, 0.25)';
+            ctx.lineWidth = 1.25;
+            for (let i = 0; i < 5; i++) {
+                const ax = 48 + i * 58;
+                const ay = 108 + Math.sin(Date.now() / 900 + i) * 13;
+                ctx.beginPath();
+                ctx.moveTo(ax, ay);
+                ctx.lineTo(ax + 44, ay + 3);
+                ctx.stroke();
+            }
+
+            // Labels inside viz
+            ctx.fillStyle = 'rgba(103, 232, 249, 0.5)';
+            ctx.font = '600 9.5px Inter, system-ui';
+            ctx.fillText('GULF OF CALIFORNIA', 14, canvas.height - 18);
+            ctx.fillText('→ MOISTURE PLUME →', 14, 26);
+        }
+
+        function toggleSurge() {
+            surgeRunning = !surgeRunning;
+            const btn = document.getElementById('surge-btn-text');
+            btn.textContent = surgeRunning ? 'PAUSE' : 'RESUME';
+
+            if (surgeRunning) {
+                const canvas = document.getElementById('surge-canvas');
+                function loop() {
+                    if (!surgeRunning) return;
+                    updateSurge(canvas);
+                    drawSurge();
+                    surgeId = requestAnimationFrame(loop);
+                }
+                loop();
+            }
+        }
+
+        // Initialize all animations
+        function initAnimations() {
+            // Microburst
+            initMicroburst();
+
+            // Radar
+            setTimeout(() => {
+                initRadar();
+            }, 120);
+
+            // Gulf Surge
+            setTimeout(() => {
+                initSurge();
+            }, 280);
+
+            // Click to trigger microburst hint
+            const microCanvas = document.getElementById('microburst-canvas');
+            microCanvas.style.cursor = 'pointer';
+        }
+
+        // Main initialization
+        function initializeWebsite() {
+            initializeTailwind();
+            initNavbar();
+            initAnimations();
+
+            // Optional gentle demo trigger (commented to avoid surprise)
+            // setTimeout(() => { ... }, 6200);
+
+            // Accessibility: allow spacebar to trigger microburst when focused
+            const microCanvas = document.getElementById('microburst-canvas');
+            microCanvas.setAttribute('tabindex', '0');
+            microCanvas.addEventListener('keydown', (e) => {
+                if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    triggerMicroburst();
+                }
+            });
+
+            // Easter egg: Konami-ish for extra storm
+            let konami = [];
+            document.addEventListener('keydown', (e) => {
+                konami.push(e.key);
+                if (konami.length > 6) konami.shift();
+                if (konami.join('').includes('ArrowUpArrowUpArrowDown')) {
+                    const c = document.getElementById('microburst-canvas');
+                    if (c) {
+                        for (let i = 0; i < 3; i++) {
+                            setTimeout(() => triggerMicroburst(), i * 190);
+                        }
+                    }
+                    konami = [];
+                }
+            });
+
+            console.log('%c[2026 MPC] Monsoon landing page initialized.', 'color:#64748b');
+        }
+
+        // Boot
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeWebsite);
+        } else {
+            initializeWebsite();
+        }
+    </script>
+</body>
+</html>
