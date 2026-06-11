@@ -378,62 +378,6 @@
         </div>
     </section>
 
-    <!-- THE CHALLENGE -->
-    <section id="enter" class="max-w-screen-2xl mx-auto px-8 py-20">
-        <div class="max-w-4xl mx-auto text-center mb-12">
-            <div class="inline-block px-4 py-1 rounded-2xl bg-orange-500/10 text-orange-400 text-sm font-semibold tracking-wider mb-4">THE 2026 CHALLENGE</div>
-            <h2 class="section-header tracking-tighter mb-3">Can you forecast<br>the pulse of the desert?</h2>
-            <p class="text-2xl font-semibold text-orange-400 mb-4">Entry Deadline: 5 June 2026</p>
-            <p class="text-xl text-slate-400 max-w-lg mx-auto">Predict the 2026 monsoon onset at Tucson plus two additional KTUS metrics. Test your skill against one of the Southwest's toughest forecasting challenges.</p>
-        </div>
-
-        <div class="max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-3xl p-9 md:p-11">
-            <div class="space-y-6 text-[15px]">
-                <div class="flex gap-5">
-                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-calendar text-orange-400"></i></div>
-                    <div class="flex-1 pt-0.5">
-                        <div class="font-semibold">Tucson monsoon onset (54°F dewpoint rule at KTUS)</div>
-                        <div class="text-slate-400 text-sm">First day of three consecutive days with average dewpoint ≥54°F.</div>
-                    </div>
-                </div>
-                <div class="flex gap-5">
-                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-bolt text-orange-400"></i></div>
-                    <div class="flex-1 pt-0.5">
-                        <div class="font-semibold">First thunderstorms observed at KTUS</div>
-                        <div class="text-slate-400 text-sm">Date and time of the first thunderstorm reported at Tucson International Airport.</div>
-                    </div>
-                </div>
-                <div class="flex gap-5">
-                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-cloud-rain text-orange-400"></i></div>
-                    <div class="flex-1 pt-0.5">
-                        <div class="font-semibold">Total accumulated precipitation at KTUS</div>
-                        <div class="text-slate-400 text-sm">Seasonal rainfall total at Tucson International Airport (June 15 – September 30).</div>
-                    </div>
-                </div>
-                <div class="flex gap-5">
-                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-clock text-orange-400"></i></div>
-                    <div class="flex-1 pt-0.5">
-                        <div class="font-semibold">Entry Deadline</div>
-                        <div class="text-amber-400 text-sm font-semibold">5 June 2026</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="mt-9 pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
-                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
-                   target="_blank"
-                   class="flex-1 inline-flex justify-center items-center gap-x-2.5 px-7 py-[17px] bg-white hover:bg-amber-50 active:bg-white text-slate-950 rounded-2xl font-bold text-base transition-all">
-                    <span>ENTER THE 2026 COMPETITION</span>
-                </a>
-                <a href="#visuals" class="flex-1 sm:flex-none inline-flex justify-center items-center gap-x-2 px-7 py-[17px] border border-white/30 hover:bg-white/5 rounded-2xl font-medium transition-colors">
-                    Explore the visuals first
-                </a>
-            </div>
-            
-            <p class="text-center text-xs text-slate-500 mt-5">The official entry form contains full rules and scoring methodology.</p>
-        </div>
-    </section>
-
     <!-- VISUALS SECTION -->
     <section id="visuals" class="bg-slate-900 border-t border-white/10 py-16">
         <div class="max-w-screen-2xl mx-auto px-8">
@@ -443,7 +387,55 @@
                     <h2 class="section-header text-white tracking-tighter">The monsoon in motion.</h2>
                 </div>
                 <div class="max-w-sm text-slate-400 text-[15px]">
-                    Key phenomena and processes that define the North American Monsoon in southern Arizona.
+                    Track the competition with live dashboards and explore key phenomena that define the North American Monsoon.
+                </div>
+            </div>
+
+            <!-- NEW: LIVE FORECAST TRACKERS -->
+            <div class="mb-16">
+                <div class="px-1 mb-4">
+                    <div class="text-sm font-semibold tracking-wide text-slate-300">LIVE FORECAST TRACKERS</div>
+                </div>
+                <div class="grid lg:grid-cols-3 gap-4">
+                    <!-- Onset Tracker -->
+                    <a href="MonsoonTracker.html" class="group block weather-card bg-slate-950/50 hover:bg-slate-900 border border-white/10 rounded-3xl p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="font-semibold text-lg text-white">Monsoon Onset Tracker</div>
+                            <i class="fa-solid fa-arrow-right text-slate-600 group-hover:text-orange-400 group-hover:translate-x-1 transition-all"></i>
+                        </div>
+                        <p class="text-sm text-slate-400 mt-2 mb-5">Follow the daily dew point progression toward the 54°F threshold and see where competitor predictions land.</p>
+                        <div class="text-orange-400 flex items-center gap-x-3">
+                            <i class="fa-solid fa-calendar-day text-3xl"></i>
+                            <div class="h-8 w-px bg-white/10"></div>
+                            <div class="text-xs uppercase tracking-widest">Start Date</div>
+                        </div>
+                    </a>
+                    <!-- Lightning Tracker -->
+                    <a href="MonsoonTrackerTSTM.html" class="group block weather-card bg-slate-950/50 hover:bg-slate-900 border border-white/10 rounded-3xl p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="font-semibold text-lg text-white">First Lightning Tracker</div>
+                            <i class="fa-solid fa-arrow-right text-slate-600 group-hover:text-orange-400 group-hover:translate-x-1 transition-all"></i>
+                        </div>
+                        <p class="text-sm text-slate-400 mt-2 mb-5">View a histogram of historical first thunderstorm dates vs. the 2026 predictions for the first strike at KTUS.</p>
+                        <div class="text-orange-400 flex items-center gap-x-3">
+                            <i class="fa-solid fa-bolt-lightning text-3xl"></i>
+                            <div class="h-8 w-px bg-white/10"></div>
+                            <div class="text-xs uppercase tracking-widest">First Strike</div>
+                        </div>
+                    </a>
+                    <!-- Precip Tracker -->
+                    <a href="MonsoonTrackerPrecip.html" class="group block weather-card bg-slate-950/50 hover:bg-slate-900 border border-white/10 rounded-3xl p-6">
+                        <div class="flex items-start justify-between">
+                            <div class="font-semibold text-lg text-white">Total Precip Tracker</div>
+                            <i class="fa-solid fa-arrow-right text-slate-600 group-hover:text-orange-400 group-hover:translate-x-1 transition-all"></i>
+                        </div>
+                        <p class="text-sm text-slate-400 mt-2 mb-5">A "Haywood Plot" tracking the season's cumulative rainfall vs historical norms and competitor forecasts.</p>
+                        <div class="text-orange-400 flex items-center gap-x-3">
+                            <i class="fa-solid fa-cloud-showers-heavy text-3xl"></i>
+                            <div class="h-8 w-px bg-white/10"></div>
+                            <div class="text-xs uppercase tracking-widest">Total Rainfall</div>
+                        </div>
+                    </a>
                 </div>
             </div>
 
@@ -568,6 +560,62 @@
         </div>
     </section>
 
+    <!-- THE CHALLENGE -->
+    <section id="enter" class="max-w-screen-2xl mx-auto px-8 py-20">
+        <div class="max-w-4xl mx-auto text-center mb-12">
+            <div class="inline-block px-4 py-1 rounded-2xl bg-orange-500/10 text-orange-400 text-sm font-semibold tracking-wider mb-4">THE 2026 CHALLENGE</div>
+            <h2 class="section-header tracking-tighter mb-3">Can you forecast<br>the pulse of the desert?</h2>
+            <p class="text-2xl font-semibold text-orange-400 mb-4">Entry Deadline: 5 June 2026</p>
+            <p class="text-xl text-slate-400 max-w-lg mx-auto">Predict the 2026 monsoon onset at Tucson plus two additional KTUS metrics. Test your skill against one of the Southwest's toughest forecasting challenges.</p>
+        </div>
+
+        <div class="max-w-2xl mx-auto bg-slate-900 border border-white/10 rounded-3xl p-9 md:p-11">
+            <div class="space-y-6 text-[15px]">
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-calendar text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">Tucson monsoon onset (54°F dewpoint rule at KTUS)</div>
+                        <div class="text-slate-400 text-sm">First day of three consecutive days with average dewpoint ≥54°F.</div>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-bolt text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">First thunderstorms observed at KTUS</div>
+                        <div class="text-slate-400 text-sm">Date and time of the first thunderstorm reported at Tucson International Airport.</div>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-cloud-rain text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">Total accumulated precipitation at KTUS</div>
+                        <div class="text-slate-400 text-sm">Seasonal rainfall total at Tucson International Airport (June 15 – September 30).</div>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="shrink-0 w-8 h-8 rounded-2xl bg-orange-500/10 flex items-center justify-center"><i class="fa-solid fa-clock text-orange-400"></i></div>
+                    <div class="flex-1 pt-0.5">
+                        <div class="font-semibold">Entry Deadline</div>
+                        <div class="text-amber-400 text-sm font-semibold">5 June 2026</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-9 pt-8 border-t border-white/10 flex flex-col sm:flex-row gap-4">
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="flex-1 inline-flex justify-center items-center gap-x-2.5 px-7 py-[17px] bg-white hover:bg-amber-50 active:bg-white text-slate-950 rounded-2xl font-bold text-base transition-all">
+                    <span>ENTER THE 2026 COMPETITION</span>
+                </a>
+                <a href="#visuals" class="flex-1 sm:flex-none inline-flex justify-center items-center gap-x-2 px-7 py-[17px] border border-white/30 hover:bg-white/5 rounded-2xl font-medium transition-colors">
+                    Explore the visuals first
+                </a>
+            </div>
+            
+            <p class="text-center text-xs text-slate-500 mt-5">The official entry form contains full rules and scoring methodology.</p>
+        </div>
+    </section>
+
     <!-- FINAL CTA -->
     <section class="max-w-screen-2xl mx-auto px-8 py-20">
         <div class="max-w-3xl mx-auto text-center">
@@ -659,6 +707,7 @@
 
         function initMicroburst() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             microburstCtx = canvas.getContext('2d', { alpha: true });
 
             canvas.addEventListener('click', triggerMicroburst);
@@ -691,6 +740,7 @@
 
         function updateAmbientDust() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             microburstParticles.forEach(p => {
                 if (p.type === 'ambient') {
                     p.x += p.vx;
@@ -706,6 +756,7 @@
 
         function triggerMicroburst() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             microburstRunning = true;
             clearTimeout(microburstAnimationId);
 
@@ -747,6 +798,7 @@
 
         function animateMicroburst() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             const ctx = microburstCtx;
 
             microburstParticles = microburstParticles.filter(p => p.life > 0);
@@ -802,6 +854,7 @@
 
         function drawMicroburst() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             const ctx = microburstCtx;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -855,6 +908,7 @@
 
         function resetMicroburst() {
             const canvas = document.getElementById('microburst-canvas');
+            if (!canvas) return;
             microburstRunning = false;
             clearTimeout(microburstAnimationId);
 
@@ -879,6 +933,7 @@
 
         function initRadar() {
             const canvas = document.getElementById('radar-canvas');
+            if (!canvas) return;
             radarCtx = canvas.getContext('2d');
 
             // Create realistic monsoon-like echoes (scattered pulse storms)
@@ -920,6 +975,7 @@
 
         function drawRadar() {
             const canvas = document.getElementById('radar-canvas');
+            if (!canvas) return;
             const ctx = radarCtx;
             const w = canvas.width;
             const h = canvas.height;
@@ -1014,6 +1070,7 @@
         function toggleRadar() {
             radarRunning = !radarRunning;
             const btn = document.getElementById('radar-btn-text');
+            if (!btn) return;
             btn.textContent = radarRunning ? 'PAUSE' : 'RESUME';
 
             if (radarRunning) {
@@ -1036,6 +1093,7 @@
 
         function initSurge() {
             const canvas = document.getElementById('surge-canvas');
+            if (!canvas) return;
             surgeCtx = canvas.getContext('2d');
 
             surgeParticles = [];
@@ -1087,6 +1145,7 @@
 
         function drawSurge() {
             const canvas = document.getElementById('surge-canvas');
+            if (!canvas) return;
             const ctx = surgeCtx;
 
             // Deep background
@@ -1139,6 +1198,7 @@
         function toggleSurge() {
             surgeRunning = !surgeRunning;
             const btn = document.getElementById('surge-btn-text');
+            if (!btn) return;
             btn.textContent = surgeRunning ? 'PAUSE' : 'RESUME';
 
             if (surgeRunning) {
@@ -1170,7 +1230,9 @@
 
             // Click to trigger microburst hint
             const microCanvas = document.getElementById('microburst-canvas');
-            microCanvas.style.cursor = 'pointer';
+            if (microCanvas) {
+              microCanvas.style.cursor = 'pointer';
+            }
         }
 
         // Main initialization
@@ -1179,18 +1241,17 @@
             initNavbar();
             initAnimations();
 
-            // Optional gentle demo trigger (commented to avoid surprise)
-            // setTimeout(() => { ... }, 6200);
-
             // Accessibility: allow spacebar to trigger microburst when focused
             const microCanvas = document.getElementById('microburst-canvas');
-            microCanvas.setAttribute('tabindex', '0');
-            microCanvas.addEventListener('keydown', (e) => {
-                if (e.key === ' ' || e.key === 'Enter') {
-                    e.preventDefault();
-                    triggerMicroburst();
-                }
-            });
+            if (microCanvas) {
+                microCanvas.setAttribute('tabindex', '0');
+                microCanvas.addEventListener('keydown', (e) => {
+                    if (e.key === ' ' || e.key === 'Enter') {
+                        e.preventDefault();
+                        triggerMicroburst();
+                    }
+                });
+            }
 
             // Easter egg: Konami-ish for extra storm
             let konami = [];
