@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Monsoon Dew Point Tracker</title>
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
+        .chart-container {
+            position: relative; height: 60vh; width: 90vw; background: white;
+            padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: auto;
+        }
+        h2, h3 { text-align: center; color: #333; }
+        
+        /* Stats Table Styling */
+        .table-container {
+            width: 90vw; margin: 30px auto; background: white; 
+            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;
+        }
+        .stats-table {
+            width: 100%; border-collapse: collapse; text-align: left;
+        }
+        .stats-table th, .stats-table td {
+            padding: 15px 20px; border-bottom: 1px solid #eef2f3;
+        }
+        .stats-table th {
+            background-color: #f8f9fa; color: #444; font-weight: bold; text-transform: uppercase; font-size: 0.85em;
+        }
+        .stats-table tr:hover { background-color: #fafbfc; }
+        .highlight { font-weight: bold; color: #ff9900; }
+
+        /* Modal Popup Styles */
+        #predictionModal {
+            display: none; position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%); background: white;
+            padding: 25px; border-radius: 12px; z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            border-top: 6px solid #ff9900;
+            min-width: 250px;
+        }
+        #modalTitle { margin-top: 0; color: #333; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px;}
+        #modalList { list-style-type: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;}
+        #modalList li { padding: 5px 0; font-size: 1.05em; color: #555;}
+        .close-btn {
+            background: #333; color: white; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; float: right; font-size: 1em;
+        }
+        .close-btn:hover { background: #555; }
+        #modalOverlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4); z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>2026 Monsoon Start Date Forecasting Competition</h2>
+    
+    <div class="chart-container">
+        <canvas id="monsoonChart"></canvas>
+    </div>
+
+    <!-- Summary Metrics Table -->
+    <div class="table-container">
+        <table class="stats-table">
+            <thead>
+                <tr>
+                    <th>Statistical Metric</th>
+                    <th>Calculated Date(s)</th>
+                    <th>Context Description</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Prediction Range</strong></td>
+                    <td id="stat-range" class="highlight">Loading...</td>
+                    <td>The window of time between the earliest and latest entry guesses.</td>
+                </tr>
+                <tr>
+                    <td><strong>Median Date</strong></td>
+                    <td id="stat-median" class="highlight">Loading...</td>
+                    <td>The midpoint calendar date of all submitted predictions.</td>
+                </tr>
+                <tr>
+                    <td><strong>Mode Date(s)</strong></td>
+                    <td id="stat-mode" class="highlight">Loading...</td>
+                    <td>The day(s) that received the absolute highest frequency of predictions.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- The Pop-up Modal for Names -->
+    <div id="modalOverlay" onclick="closeModal()"></div>
+    <div id="predictionModal">
+        <h3 id="modalTitle"></h3>
+        <ul id="modalList"></ul>
+        <button class="close-btn" onclick="closeModal()">Close</button>
+    </div>
+
+    <!-- Load the generated data file -->
+    <script src="data.js"></script>
+
+    <script>
+        function closeModal() {
+            document.getElementById('predictionModal').style.display = 'none';
+            document.getElementById('modalOverlay').style.display = 'none';
+        }
+
+        // Helper to format Date objects back to readable UI strings (e.g., "Jun 15")
+        function formatShortDate(dateObj) {
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            return months[dateObj.getMonth()] + " " + dateObj.getDate();
+        }
+
+        // Calculate and Populate Table Stats
+        function calculateStatistics() {
+            let allDates = [];
+            let dateCounts = {};
+            let maxCount = 0;
+
+            monsoonData.prediction_names.forEach(function(names, index) {
+                if (names.length > 0) {
+                    const label = monsoonData.labels[index];
+                    const dateObj = new Date(label + " 2026");
+                    
+                    // Count frequencies for Mode calculation
+                    dateCounts[label] = names.length;
+                    if (names.length > maxCount) {
+                        maxCount = names.length;
+                    }
+
+                    // Add a date instance for every individual guess
+                    names.forEach(function() {
+                        allDates.push(dateObj);
+                    });
+                }
+            });
+
+            if (allDates.length === 0) {
+                document.getElementById('stat-range').innerText = "No predictions found.";
+                document.getElementById('stat-median').innerText = "N/A";
+                document.getElementById('stat-mode').innerText = "N/A";
+                return;
+            }
+
+            // Sort dates chronologically
+            allDates.sort(function(a, b) { return a - b; });
+
+            // 1. Calculate Range
+            const earliest = allDates[0];
+            const latest = allDates[allDates.length - 1];
+            document.getElementById('stat-range').innerText = formatShortDate(earliest) + " to " + formatShortDate(latest);
+
+            // 2. Calculate Median
+            let medianStr = "";
+            const half = Math.floor(allDates.length / 2);
+            if (allDates.length % 2 !== 0) {
+                medianStr = formatShortDate(allDates[half]);
+            } else {
+                const mid1 = allDates[half - 1];
+                const mid2 = allDates[half];
+                if (formatShortDate(mid1) === formatShortDate(mid2)) {
+                    medianStr = formatShortDate(mid1);
+                } else {
+                    // Average the two middle dates
+                    const avgMs = (mid1.getTime() + mid2.getTime()) / 2;
+                    medianStr = formatShortDate(new Date(avgMs));
+                }
+            }
+            document.getElementById('stat-median').innerText = medianStr;
+
+            // 3. Calculate Mode (supports multiple ties)
+            let modes = [];
+            for (let label in dateCounts) {
+                if (dateCounts[label] === maxCount) {
+                    modes.push(label + " (" + maxCount + " entries)");
+                }
+            }
+            document.getElementById('stat-mode').innerText = modes.join(", ");
+        }
+
+        if (typeof monsoonData === 'undefined') {
+            alert("Error: data.js not found. Please run the Python script first.");
+        } else {
+            // Populate stats
+            calculateStatistics();
+
+            const ctx = document.getElementById('monsoonChart').getContext('2d');
+            const config = {
+                type: 'line',
+                data: {
+                    labels: monsoonData.labels,
+                    datasets: [
+                        {
+                            label: '2026 Actual Dew Point (°F)',
+                            data: monsoonData.actual,
+                            borderColor: 'rgba(0, 102, 204, 1)',
+                            backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                            borderWidth: 3, fill: false, tension: 0.1, zIndex: 10
+                        },
+                        {
+                            label: 'Average Norm (°F)',
+                            data: monsoonData.mean,
+                            borderColor: 'rgba(100, 100, 100, 0.8)',
+                            borderDash: [5, 5], borderWidth: 2, fill: false, pointRadius: 0
+                        },
+                        {
+                            label: '+1 Std Dev',
+                            data: monsoonData.upper_std,
+                            borderColor: 'rgba(200, 200, 200, 0)',
+                            backgroundColor: 'rgba(200, 200, 200, 0.3)',
+                            fill: '+1', pointRadius: 0
+                        },
+                        {
+                            label: '-1 Std Dev',
+                            data: monsoonData.lower_std,
+                            borderColor: 'rgba(200, 200, 200, 0)',
+                            fill: false, pointRadius: 0
+                        },
+                        {
+                            label: 'Monsoon Threshold (54 °F)',
+                            data: monsoonData.threshold,
+                            borderColor: 'rgba(255, 0, 0, 0.8)',
+                            borderWidth: 2, fill: false, pointRadius: 0, zIndex: 5
+                        },
+                        {
+                            type: 'line',
+                            label: 'Competitor Predictions',
+                            data: monsoonData.predictions_y,
+                            backgroundColor: 'rgba(255, 153, 0, 1)',
+                            borderColor: 'rgba(255, 153, 0, 1)',
+                            pointStyle: 'triangle',
+                            pointRadius: 8,
+                            pointHoverRadius: 11,
+                            showLine: false,
+                            zIndex: 15
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    onClick: function(event, elements, chart) {
+                        if (elements.length > 0) {
+                            for (let i = 0; i < elements.length; i++) {
+                                let el = elements[i];
+                                if (chart.data.datasets[el.datasetIndex].label === 'Competitor Predictions') {
+                                    let dayLabel = monsoonData.labels[el.index];
+                                    let names = monsoonData.prediction_names[el.index];
+                                    
+                                    if (names && names.length > 0) {
+                                        document.getElementById('modalTitle').innerText = 'Predictions for ' + dayLabel;
+                                        let ul = document.getElementById('modalList');
+                                        ul.innerHTML = '';
+                                        names.forEach(function(name) {
+                                            let li = document.createElement('li');
+                                            li.innerText = name;
+                                            ul.appendChild(li);
+                                        });
+                                        document.getElementById('modalOverlay').style.display = 'block';
+                                        document.getElementById('predictionModal').style.display = 'block';
+                                    }
+                                    return;
+                                }
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            filter: function(tooltipItem) {
+                                return tooltipItem.dataset.label !== 'Competitor Predictions';
+                            },
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' °F';
+                                }
+                            }
+                        },
+                        legend: {
+                            labels: {
+                                filter: function(item, chart) {
+                                    return !item.text.includes('Std Dev');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Calendar Date' } },
+                        y: { title: { display: true, text: 'Dew Point (°F)' }, suggestedMin: 30, suggestedMax: 70 }
+                    }
+                }
+            };
+
+            new Chart(ctx, config);
+        }
+    </script>
+</body>
+</html>
