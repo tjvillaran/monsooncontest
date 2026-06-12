@@ -8,7 +8,9 @@ Fetches previous calendar day's weather for KTUS (Tucson) from IEM ASOS archive.
   chart labels, tooltips, axis, threshold (54), mean/std arrays, and every reference
   in the HTML pages ("54°F rule").
 - Computes daily total precip (inches) by summing p01i over the same 24h window.
-- Fetches latest Extended Range GFS MOS (MEX bulletin) and extracts dewpoint guidance for near-term outlook.
+- Fetches latest Extended Range GFS MOS (MEX) from the official MDL source
+  (https://www.weather.gov/source/mdl/MOS/GFSMEX.t00z) and extracts dewpoint
+  guidance for the near-term outlook (shown as a dashed line on the graph).
 Uses only regular hourly METARs (no SPECI) so p01i values represent clean hourly buckets
 without double-dipping from special obs precip groups.
 Updates:
@@ -216,75 +218,116 @@ def update_precip_js(local_date, daily_precip):
 
 
 def fetch_latest_mex():
-    """Fetch the latest available Extended Range GFS MOS (MEX) text file from NOMADS.
-    Tries recent dates and 00Z/12Z cycles. Returns (content, cycle, date_str) or raises.
+    """Fetch the latest Extended Range GFS MOS (MEX) from the official MDL source.
+    Tries 00Z first (available in morning when the scheduled run happens), then 12Z.
+    Returns (content, cycle, date_str) or raises.
     """
     import urllib.request
-    from datetime import datetime, timedelta, timezone
-    base = "https://nomads.ncep.noaa.gov/pub/data/nccf/com/gfs/prod/"
-    now = datetime.now(timezone.utc)
-    for delta in range(3):
-        d = (now - timedelta(days=delta)).date()
-        for cyc in ["12", "00"]:
-            ymd = d.strftime("%Y%m%d")
-            url = f"{base}gfsmos.{ymd}/mdl_gfsmex.t{cyc}z"
-            try:
-                with urllib.request.urlopen(url, timeout=15) as resp:
-                    content = resp.read().decode("utf-8", errors="replace")
-                    return content, cyc, d.strftime("%b %d")
-            except Exception:
-                continue
-    raise RuntimeError("No recent GFS MEX file found on NOMADS")
+    # Primary source provided by user - always the latest for that cycle
+    urls = [
+        ("https://www.weather.gov/source/mdl/MOS/GFSMEX.t00z", "00"),
+        ("https://www.weather.gov/source/mdl/MOS/GFSMEX.t12z", "12"),
+    ]
+    for url, cyc in urls:
+        try:
+            with urllib.request.urlopen(url, timeout=20) as resp:
+                content = resp.read().decode("utf-8", errors="replace")
+                return content, cyc, "latest"
+        except Exception:
+            continue
+    raise RuntimeError("No recent GFS MEX file found")
 
 
 def parse_mex_dewpoints(content, target_year=2026):
-    """Parse MEX bulletin content for TUS station and return dict of 'Jun 13': dew_f .
-    Uses the DPT row which provides the model dewpoint guidance for each projected day.
+    """Parse the new-style GFSX MOS (GFSMEX) bulletin for TUS and return
+    dict of 'Jun 13': dew_f .
+
+    The file uses a table format with:
+      - Header line containing the run time and date
+      - Day label line (e.g. FRI 12| SAT 13| SUN 14| ...)
+      - DPT line with dewpoint guidance aligned to those columns
+    We take the first numeric value from each column group as the daily dewpoint.
     """
     import re
     from datetime import datetime
+
     forecast = {}
     lines = content.splitlines()
+
     for i, line in enumerate(lines):
-        if "TUS" in line and "MEX" in line:
-            # Look for the date header line (usually next 1-3 lines)
-            for k in range(1, 6):
+        if "TUS" in line and "GFSX MOS GUIDANCE" in line:
+            # Parse the issuance date from the header, e.g. 6/12/2026
+            date_match = re.search(r"(\d{1,2}/\d{1,2}/\d{4})", line)
+            if date_match:
+                try:
+                    base_dt = datetime.strptime(date_match.group(1), "%m/%d/%Y")
+                    month = base_dt.month
+                    year = base_dt.year
+                except:
+                    month = 6
+                    year = target_year
+            else:
+                month = 6
+                year = target_year
+
+            # Look ahead for the day-label line (must contain weekday abbr like SAT 13)
+            day_numbers = []
+            for k in range(1, 10):
                 if i + k >= len(lines):
                     break
-                dline = lines[i + k].strip()
-                date_strs = re.findall(r"(\d{2}/\d{2})", dline)
-                if len(date_strs) >= 4:
-                    # Now search a few lines for the DPT row
-                    for m in range(k + 1, k + 8):
-                        if i + m >= len(lines):
-                            break
-                        dpt_line = lines[i + m].strip()
-                        if dpt_line.startswith("DPT"):
-                            vals = re.findall(r"-?\d+", dpt_line)
-                            dpts = []
-                            for v in vals:
-                                try:
-                                    iv = int(v)
-                                    if -20 < iv < 100:  # reasonable dew F
-                                        dpts.append(iv)
-                                except:
-                                    pass
-                            # Pair dates with dpts
-                            for j, ds in enumerate(date_strs[: len(dpts)]):
-                                try:
-                                    mth, day = int(ds[:2]), int(ds[3:])
-                                    dt = datetime(target_year, mth, day)
-                                    label = dt.strftime("%b ") + str(dt.day)
-                                    forecast[label] = dpts[j]
-                                except Exception:
-                                    pass
-                            break
+                dline = lines[i + k]
+                # Require a weekday abbreviation to avoid matching the FHR hour line
+                if re.search(r"\b(FRI|SAT|SUN|MON|TUE|WED|THU)\s*\d", dline, re.I):
+                    matches = re.findall(r"(?:[A-Z]{3}\s*)?(\d{1,2})", dline)
+                    if len(matches) >= 4:
+                        day_numbers = [int(m) for m in matches[:8]]
+                        break
+
+            if not day_numbers:
+                continue
+
+            # Find the DPT line
+            for m in range(k + 1, k + 8):
+                if i + m >= len(lines):
                     break
+                dpt_line = lines[i + m].strip()
+                if dpt_line.startswith("DPT"):
+                    # Split by column separator |
+                    parts = dpt_line.split("|")
+                    dpts = []
+                    for p in parts:
+                        nums = re.findall(r"-?\d+", p)
+                        if nums:
+                            try:
+                                val = int(nums[0])
+                                if -20 < val < 100:
+                                    dpts.append(val)
+                            except:
+                                pass
+
+                    # Map day numbers to dewpoints
+                    for j, day in enumerate(day_numbers[:len(dpts)]):
+                        try:
+                            # Handle simple month rollover if days go backwards
+                            if j > 0 and day < day_numbers[j-1]:
+                                month += 1
+                                if month > 12:
+                                    month = 1
+                                    year += 1
+                            dt = datetime(year, month, day)
+                            label = dt.strftime("%b ") + str(dt.day)
+                            forecast[label] = dpts[j]
+                        except Exception:
+                            pass
+                    break
+            break
+
     return forecast
 
 
 def update_mex_forecast():
     """Fetch latest MEX, parse dewpoints for the season, and update data.js with gfs_mex array and label."""
+    import re
     labels = None
     try:
         data = parse_js_object(DATA_JS)
@@ -292,12 +335,25 @@ def update_mex_forecast():
         if not labels:
             print("  No labels in data.js for MEX update")
             return False
-        content, cyc, run_date = fetch_latest_mex()
+        content, cyc, _ = fetch_latest_mex()
         mex_map = parse_mex_dewpoints(content)
+
+        # Try to extract a nice run date from the first TUS header in the file
+        run_label = f"GFS MEX {cyc}Z"
+        header_match = re.search(r"TUS\s+GFSX MOS GUIDANCE\s+([0-9/]+)\s+(\d{4})\s+UTC", content)
+        if header_match:
+            try:
+                raw = header_match.group(1)  # e.g. 6/12/2026
+                # Make it a bit friendlier for the legend
+                run_label = f"GFS MEX {cyc}Z {raw}"
+            except:
+                pass
+
         gfs_mex = [None] * len(labels)
         for idx, lab in enumerate(labels):
             if lab in mex_map:
                 gfs_mex[idx] = mex_map[lab]
+
         # Make forecast line extend from the last actual point (for visual continuity)
         actuals = data.get("actual", [])
         for ii in range(len(actuals) - 1, -1, -1):
@@ -305,15 +361,16 @@ def update_mex_forecast():
                 if ii + 1 < len(gfs_mex) and gfs_mex[ii + 1] is not None:
                     gfs_mex[ii] = actuals[ii]
                 break
+
         data["gfs_mex"] = gfs_mex
-        data["gfs_mex_label"] = f"GFS MEX {cyc}Z {run_date}"
+        data["gfs_mex_label"] = run_label
         save_js_object(DATA_JS, "monsoonData", data)
         filled = sum(1 for x in gfs_mex if x is not None)
         print(f"  data.js: updated gfs_mex ({filled} days) label='{data['gfs_mex_label']}'")
         return True
     except Exception as e:
         print(f"  Could not update MEX forecast: {e}")
-        # ensure keys exist
+        # ensure keys exist so the chart doesn't break
         if labels:
             try:
                 data = parse_js_object(DATA_JS)
