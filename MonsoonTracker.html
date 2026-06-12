@@ -202,6 +202,18 @@
                             borderWidth: 3, fill: false, tension: 0.1, zIndex: 10
                         },
                         {
+                            label: (monsoonData.gfs_mex_label || 'GFS MEX Forecast'),
+                            data: (monsoonData.gfs_mex || []),
+                            borderColor: 'rgba(249, 115, 22, 1)',
+                            borderDash: [6, 3],
+                            borderWidth: 2,
+                            fill: false,
+                            tension: 0.15,
+                            pointRadius: 2,
+                            pointHoverRadius: 4,
+                            zIndex: 9
+                        },
+                        {
                             label: 'Average Norm (°F)',
                             data: monsoonData.mean,
                             borderColor: 'rgba(100, 100, 100, 0.8)',

@@ -6,6 +6,7 @@ This repo now includes automation to keep `data.js` (daily avg dewpoint in °F) 
 - **~7:00 AM Tucson time (MST, always UTC-7)**: the *previous calendar day's* values.
   - Dewpoint: average of hourly dwpf observations for the local calendar day (00:00–24:00 MST). Stored directly in °F (the IEM `dwpf` field is already in Fahrenheit; this matches the rest of the data file and all the °F labeling + the 54°F rule used throughout the site).
   - Precip: sum of p01i (one-hour precip) over the exact same local-day window using *only regular METAR reports* (report_type=3). This prevents double-counting any SPECI special observations that may contain extra precip groups.
+  - GFS MEX Forecast: The script also fetches the latest Extended Range GFS MOS (MEX bulletin, 00Z or 12Z cycle) and extracts the DPT (dewpoint) guidance. This populates a short ~7-8 day dashed orange forecast line in the MonsoonTracker.html chart, starting from the last actual observation for visual continuity. The legend shows the exact model run (e.g. "GFS MEX 12Z Jun 12").
 - Time zone handling: window calculated as UTC 07:00 previous → 07:00 current for the Tucson calendar day.
 - Precip 2026 is stored as a **running cumulative total** (starting from 0.0 on Jun 15) so the charts show season-to-date accumulation like the historical years.
 
