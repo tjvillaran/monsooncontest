@@ -1,0 +1,45 @@
+name: Update KTUS Monsoon Data
+
+on:
+  schedule:
+    # Run every day at 14:00 UTC (~7:00 AM MST / 8:00 AM PDT, Tucson is always MST UTC-7 no DST)
+    # Adjust the hour if you prefer a later morning update (e.g. 15:00 UTC = 8am MST)
+    - cron: "0 14 * * *"
+  workflow_dispatch:   # Allow manual trigger from GitHub UI (Actions tab)
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # Required so the job can push commits back to the repo
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          # Fetch full history (not strictly needed but safer for some actions)
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Run update script (previous local day)
+        run: |
+          python update_ktus_data.py
+        # If you ever need to force a particular date from the UI:
+        #   python update_ktus_data.py --date 2026-06-15
+
+      - name: Commit and push changes (if any)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data.js precip_data.js
+          # Only commit if there is actually a diff
+          if git diff --staged --quiet; then
+            echo "No data changes to commit."
+          else
+            git commit -m "chore(data): update KTUS dewpoint/precip actuals ($(date -I))"
+            git push
+            echo "Pushed updated data files."
+          fi
