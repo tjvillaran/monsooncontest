@@ -28,6 +28,7 @@ import re
 import sys
 import argparse
 import os
+import time
 
 ASOS_URL = "https://mesonet.agron.iastate.edu/cgi-bin/request/asos.py"
 DATA_JS = "data.js"
@@ -97,13 +98,32 @@ def fetch_and_compute(local_date):
     )
     url = f"{ASOS_URL}?{q}"
 
-    try:
-        with urllib.request.urlopen(url, timeout=60) as resp:
-            txt = resp.read().decode("utf-8", errors="replace")
-    except urllib.error.HTTPError as e:
-        if e.code == 429:
-            print("Rate limited by IEM (429). Try again later (they ask for hourly max requests).")
-        raise
+    # Retry a few times on transient server errors (503 etc. are common from IEM)
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(url, timeout=60) as resp:
+                txt = resp.read().decode("utf-8", errors="replace")
+            break
+        except urllib.error.HTTPError as e:
+            if e.code == 429:
+                print("Rate limited by IEM (429). Try again later (they ask for hourly max requests).")
+                return None, 0.0
+            if e.code in (500, 502, 503, 504) and attempt < 2:
+                print(f"IEM temporarily unavailable (HTTP {e.code}), retrying ({attempt+1}/3)...")
+                time.sleep(5 * (attempt + 1))
+                continue
+            print(f"HTTP error {e.code} fetching from IEM. Skipping today's update.")
+            return None, 0.0
+        except Exception as e:
+            if attempt < 2:
+                print(f"Network error fetching from IEM: {e}. Retrying ({attempt+1}/3)...")
+                time.sleep(5 * (attempt + 1))
+                continue
+            print(f"Failed to fetch from IEM after retries: {e}. Skipping.")
+            return None, 0.0
+    else:
+        print("Failed to fetch from IEM after 3 attempts. Skipping.")
+        return None, 0.0
 
     # Remove comment / debug lines
     lines = [ln for ln in txt.splitlines() if ln.strip() and not ln.startswith("#")]

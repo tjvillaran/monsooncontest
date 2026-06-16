@@ -164,6 +164,10 @@
         } else {
             calculateStatistics();
 
+            if (!tsData.actual) {
+                tsData.actual = new Array(tsData.labels.length).fill(null);
+            }
+
             const ctx = document.getElementById('tsChart').getContext('2d');
             const config = {
                 type: 'bar',
@@ -178,6 +182,21 @@
                             borderColor: 'rgba(111, 66, 193, 1)',
                             borderWidth: 1,
                             yAxisID: 'y'
+                        },
+                        {
+                            type: 'line',
+                            label: '⚡ Actual First Lightning Strike (Jun 14)',
+                            data: tsData.actual,
+                            borderColor: 'rgba(255, 215, 0, 1)',
+                            backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                            pointStyle: 'star',
+                            pointRadius: 14,
+                            pointHoverRadius: 18,
+                            pointBorderColor: 'rgba(255, 140, 0, 1)',
+                            pointBorderWidth: 2,
+                            showLine: false,
+                            yAxisID: 'y',
+                            zIndex: 20
                         },
                         {
                             type: 'line',
@@ -229,6 +248,9 @@
                             },
                             callbacks: {
                                 label: function(context) {
+                                    if (context.dataset.label.includes('Actual First Lightning Strike')) {
+                                        return '⚡ Actual first thunderstorm strike on this day';
+                                    }
                                     return context.parsed.y + ' Historical Occurrences';
                                 }
                             }
