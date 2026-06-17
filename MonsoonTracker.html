@@ -57,6 +57,7 @@
 <body>
 
     <h2>2026 Monsoon Start Date Forecasting Competition</h2>
+    <p style="text-align:center; color:#228b22; font-weight:bold;">⚡ Monsoon officially began June 14, 2026 (first of 3 consecutive days ≥54°F dewpoint)</p>
     
     <div class="chart-container">
         <canvas id="monsoonChart"></canvas>
@@ -199,7 +200,35 @@
                             data: monsoonData.actual,
                             borderColor: 'rgba(0, 102, 204, 1)',
                             backgroundColor: 'rgba(0, 102, 204, 0.1)',
-                            borderWidth: 3, fill: false, tension: 0.1, zIndex: 10
+                            borderWidth: 3,
+                            fill: false,
+                            tension: 0.1,
+                            zIndex: 10,
+                            pointRadius: function(context) {
+                                const idx = context.dataIndex;
+                                const val = context.raw;
+                                if (val == null) return 0;
+                                if (idx === 13) return 8; // Jun 14 monsoon onset - prominent star
+                                return val >= 54 ? 4 : 2; // green points slightly larger than non-threshold
+                            },
+                            pointBackgroundColor: function(context) {
+                                const val = context.raw;
+                                if (val == null) return 'transparent';
+                                return val >= 54 ? 'green' : 'rgba(0, 102, 204, 1)';
+                            },
+                            pointBorderColor: function(context) {
+                                const val = context.raw;
+                                if (val == null) return 'transparent';
+                                return val >= 54 ? 'darkgreen' : 'rgba(0, 102, 204, 1)';
+                            },
+                            pointBorderWidth: function(context) {
+                                const idx = context.dataIndex;
+                                return idx === 13 ? 2 : 1;
+                            },
+                            pointStyle: function(context) {
+                                const idx = context.dataIndex;
+                                return idx === 13 ? 'star' : 'circle';
+                            }
                         },
                         {
                             label: (monsoonData.gfs_mex_label || 'GFS MEX Forecast'),
@@ -300,13 +329,61 @@
                         }
                     },
                     scales: {
-                        x: { title: { display: true, text: 'Calendar Date' } },
+                        x: { 
+                            title: { display: true, text: 'Calendar Date' },
+                            ticks: {
+                                callback: function(value, index) {
+                                    const label = this.chart.data.labels[index];
+                                    if (label === 'Jun 14') {
+                                        return '★ ' + label;
+                                    }
+                                    return label;
+                                }
+                            }
+                        },
                         y: { title: { display: true, text: 'Dew Point (°F)' }, suggestedMin: 30, suggestedMax: 70 }
                     }
                 }
             };
 
-            new Chart(ctx, config);
+            new Chart(ctx, {
+                type: config.type,
+                data: config.data,
+                options: config.options,
+                plugins: [{
+                    id: 'verticalOnsetLine',
+                    beforeDatasetsDraw: function(chart) {
+                        const labels = chart.data.labels;
+                        const june14Idx = labels.indexOf('Jun 14');
+                        if (june14Idx < 0) return;
+
+                        const xScale = chart.scales.x;
+                        const yScale = chart.scales.y;
+                        const x = xScale.getPixelForValue(june14Idx);
+
+                        // Find y of the actual star point
+                        let starY = yScale.top;
+                        const actualIdx = chart.data.datasets.findIndex(d => d.label === '2026 Actual Dew Point (°F)');
+                        if (actualIdx >= 0) {
+                            const meta = chart.getDatasetMeta(actualIdx);
+                            const point = meta.data[june14Idx];
+                            if (point) {
+                                starY = point.y;
+                            }
+                        }
+
+                        const ctx2 = chart.ctx;
+                        ctx2.save();
+                        ctx2.beginPath();
+                        ctx2.strokeStyle = 'green';
+                        ctx2.lineWidth = 1.5;
+                        ctx2.moveTo(x, starY);
+                        ctx2.lineTo(x, yScale.bottom);
+                        ctx2.stroke();
+                        ctx2.restore();
+                    }
+                }]
+            });
         }
     </script>
 </body>
