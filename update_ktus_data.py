@@ -92,8 +92,8 @@ def fetch_and_compute(local_date):
     q = (
         "station=KTUS"
         "&data=valid&data=dwpf&data=p01i"
-        f"&year1={start_req.year}&month1={start_req.month}&day1={start_req.day}"
-        f"&year2={end_req.year}&month2={end_req.month}&day2={end_req.day}"
+        f"&year1={start_req.year}&month1={start_req.month}&day1={start_req.day}&hour1=0&minute1=0"
+        f"&year2={end_req.year}&month2={end_req.month}&day2={end_req.day}&hour2=23&minute2=59"
         "&tz=Etc/UTC&format=comma&missing=M&trace=T&report_type=3"
     )
     url = f"{ASOS_URL}?{q}"
