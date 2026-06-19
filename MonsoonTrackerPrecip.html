@@ -131,6 +131,33 @@
                     pointRadius: 0,
                     zIndex: 20
                 },
+                // Special point for latest cumulative total (for mouseover/click)
+                (function() {
+                    let lastIdx = -1;
+                    let lastVal = null;
+                    for (let i = precipData.actual_2026.length - 1; i >= 0; i--) {
+                        if (precipData.actual_2026[i] !== null) {
+                            lastIdx = i;
+                            lastVal = precipData.actual_2026[i];
+                            break;
+                        }
+                    }
+                    if (lastIdx === -1) return null;
+                    let y_arr = new Array(precipData.labels.length).fill(null);
+                    y_arr[lastIdx] = lastVal;
+                    return {
+                        type: 'line',
+                        label: 'Current Total (' + lastVal.toFixed(2) + '")',
+                        data: y_arr,
+                        borderColor: 'rgba(255, 0, 0, 1)',
+                        backgroundColor: 'rgba(255, 0, 0, 1)',
+                        pointRadius: 6,
+                        pointHoverRadius: 10,
+                        pointBorderWidth: 2,
+                        showLine: false,
+                        zIndex: 25
+                    };
+                })(),
                 {
                     type: 'line',
                     label: '2021 (Wettest)',
@@ -183,7 +210,7 @@
                     pointRadius: 0,
                     zIndex: 1
                 }
-            ];
+            ].filter(Boolean);
 
             // Map each prediction value exactly to the final X-axis index using a padded array
             let isFirstPrediction = true;

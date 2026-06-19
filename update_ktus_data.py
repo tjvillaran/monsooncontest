@@ -139,7 +139,8 @@ def fetch_and_compute(local_date):
             vdt = datetime.strptime(row["valid"], "%Y-%m-%d %H:%M").replace(tzinfo=timezone.utc)
         except Exception:
             continue
-        if not (utc_start <= vdt < utc_end):
+        vdt_local = vdt.astimezone(mst).date()
+        if vdt_local != local_date:
             continue
         # dewpoint
         d = row.get("dwpf")
