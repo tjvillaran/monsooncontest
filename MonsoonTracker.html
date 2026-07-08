@@ -3,114 +3,273 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 Monsoon Dew Point Tracker</title>
-    <!-- Load Chart.js -->
+    <title>Monsoon Onset Tracker • 2026 MPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .chart-container {
-            position: relative; height: 60vh; width: 90vw; background: white;
-            padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: auto;
-        }
-        h2, h3 { text-align: center; color: #333; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
         
-        /* Stats Table Styling */
-        .table-container {
-            width: 90vw; margin: 30px auto; background: white; 
-            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
+        }
+        .heading-font {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+        .nav-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-link:hover {
+            color: #f97316;
+            transform: translateY(-1px);
+        }
+        .canvas-container {
+            background: #020617;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+                        inset 0 1px 0 0 rgba(255,255,255,0.06);
+        }
+        .weather-card {
+            transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1), 
+                       box-shadow 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        .weather-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.4);
+        }
+        .viz-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .modal {
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .storm-divider {
+            background: linear-gradient(to right, transparent, #f97316, transparent);
+            height: 1px;
+            opacity: 0.3;
         }
         .stats-table {
-            width: 100%; border-collapse: collapse; text-align: left;
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
         }
         .stats-table th, .stats-table td {
-            padding: 15px 20px; border-bottom: 1px solid #eef2f3;
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
         }
         .stats-table th {
-            background-color: #f8f9fa; color: #444; font-weight: bold; text-transform: uppercase; font-size: 0.85em;
+            background-color: rgba(15, 23, 42, 0.6);
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
         }
-        .stats-table tr:hover { background-color: #fafbfc; }
-        .highlight { font-weight: bold; color: #ff9900; }
-
-        /* Modal Popup Styles */
-        #predictionModal {
-            display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: white;
-            padding: 25px; border-radius: 12px; z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border-top: 6px solid #ff9900;
-            min-width: 250px;
+        .stats-table tr:hover {
+            background-color: rgba(15, 23, 42, 0.4);
         }
-        #modalTitle { margin-top: 0; color: #333; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        #modalList { list-style-type: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;}
-        #modalList li { padding: 5px 0; font-size: 1.05em; color: #555;}
-        .close-btn {
-            background: #333; color: white; border: none; padding: 10px 20px;
-            border-radius: 6px; cursor: pointer; float: right; font-size: 1em;
+        .highlight {
+            font-weight: 700;
+            color: #fb923c;
         }
-        .close-btn:hover { background: #555; }
-        #modalOverlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: rgba(0,0,0,0.4); z-index: 999;
+        .prediction-modal {
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.2);
         }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <!-- NAVBAR -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-950/95 backdrop-blur-md transition-all duration-300">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <a href="index.html" class="flex items-center gap-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/50">
+                            <i class="fa-solid fa-cloud-bolt text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-lg tracking-tighter heading-font">2026 MPC</div>
+                            <div class="text-[10px] text-slate-500 -mt-1">MONSOON PREDICTION COMPETITION</div>
+                        </div>
+                    </a>
+                </div>
 
-    <h2>2026 Monsoon Start Date Forecasting Competition</h2>
-    <p style="text-align:center; color:#228b22; font-weight:bold;">⚡ Monsoon officially began June 14, 2026 (first of 3 consecutive days ≥54°F dewpoint)</p>
-    
-    <div class="chart-container">
-        <canvas id="monsoonChart"></canvas>
+                <!-- Desktop Nav -->
+                <div class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="index.html" class="nav-link text-slate-300 hover:text-white font-medium">Home</a>
+                    <a href="MonsoonTrackerPrecip.html" class="nav-link text-slate-300 hover:text-white font-medium">Precipitation</a>
+                    <a href="MonsoonTrackerTSTM.html" class="nav-link text-slate-300 hover:text-white font-medium">Thunderstorms</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                       target="_blank"
+                       class="hidden md:inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-white text-slate-950 font-semibold text-sm hover:bg-amber-100 transition-colors active:scale-[0.985]">
+                        <span>Enter Forecast</span>
+                    </a>
+                    
+                    <!-- Mobile Menu -->
+                    <button id="mobile-menu-btn" class="md:hidden w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-slate-950 px-6 py-3">
+            <div class="flex flex-col gap-y-1 text-sm">
+                <a href="index.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Home</a>
+                <a href="MonsoonTrackerPrecip.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Precipitation</a>
+                <a href="MonsoonTrackerTSTM.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Thunderstorms</a>
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="mt-2 mx-1 flex items-center justify-center gap-x-2 px-4 py-2.5 rounded-2xl bg-white text-slate-950 font-semibold text-sm">
+                    Enter Forecast
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-16 max-w-screen-2xl mx-auto px-6">
+        <!-- Header -->
+        <div class="max-w-3xl pt-8 pb-6">
+            <div class="flex items-center gap-x-3 mb-3">
+                <div class="inline-flex items-center px-3 py-1 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold tracking-[1.5px]">DEW POINT TRACKER</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-semibold tracking-tighter heading-font mb-3">Monsoon Onset Tracker</h1>
+            <p class="text-lg text-slate-400 max-w-2xl">
+                Daily average dew point at KTUS (Tucson). The traditional monsoon onset is the first of three consecutive days ≥54°F.
+            </p>
+            
+            <div class="mt-4 inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-sm font-medium">
+                <i class="fa-solid fa-check"></i>
+                <span>Monsoon officially began <strong>June 14, 2026</strong> (first of 3 consecutive days ≥54°F)</span>
+            </div>
+        </div>
+
+        <!-- Chart -->
+        <div class="canvas-container p-5 mb-8">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div>
+                    <div class="font-semibold tracking-tight">Dew Point Progression</div>
+                    <div class="viz-label text-orange-400">54°F threshold • Actuals vs Forecasts</div>
+                </div>
+                <div class="text-xs text-slate-500 hidden md:block">Click orange triangles to see who predicted that date</div>
+            </div>
+            <div class="relative" style="height: 78vh;">
+                <canvas id="monsoonChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Summary Metrics Table -->
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Prediction Statistics</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Statistical Metric</th>
+                            <th>Calculated Date(s)</th>
+                            <th>Context Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Prediction Range</strong></td>
+                            <td id="stat-range" class="highlight">Loading...</td>
+                            <td>The window between the earliest and latest submitted guesses.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Median Date</strong></td>
+                            <td id="stat-median" class="highlight">Loading...</td>
+                            <td>The midpoint calendar date of all submitted predictions.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mode Date(s)</strong></td>
+                            <td id="stat-mode" class="highlight">Loading...</td>
+                            <td>The day(s) that received the highest frequency of predictions.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center text-xs text-slate-500 pb-8">
+            Data automatically updated from KTUS ASOS via IEM • Competitor predictions shown as prominent triangles
+        </div>
     </div>
 
-    <!-- Summary Metrics Table -->
-    <div class="table-container">
-        <table class="stats-table">
-            <thead>
-                <tr>
-                    <th>Statistical Metric</th>
-                    <th>Calculated Date(s)</th>
-                    <th>Context Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Prediction Range</strong></td>
-                    <td id="stat-range" class="highlight">Loading...</td>
-                    <td>The window of time between the earliest and latest entry guesses.</td>
-                </tr>
-                <tr>
-                    <td><strong>Median Date</strong></td>
-                    <td id="stat-median" class="highlight">Loading...</td>
-                    <td>The midpoint calendar date of all submitted predictions.</td>
-                </tr>
-                <tr>
-                    <td><strong>Mode Date(s)</strong></td>
-                    <td id="stat-mode" class="highlight">Loading...</td>
-                    <td>The day(s) that received the absolute highest frequency of predictions.</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Prediction Modal -->
+    <div id="modalOverlay" onclick="closeModal()" class="hidden fixed inset-0 bg-black/60 z-[999]"></div>
+    <div id="predictionModal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] prediction-modal p-6 rounded-3xl shadow-2xl w-full max-w-xs modal">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4 pr-8"></h3>
+        <ul id="modalList" class="space-y-1 text-sm mb-5 max-h-60 overflow-auto"></ul>
+        <button onclick="closeModal()" 
+                class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-sm font-medium transition-colors">
+            Close
+        </button>
     </div>
 
-    <!-- The Pop-up Modal for Names -->
-    <div id="modalOverlay" onclick="closeModal()"></div>
-    <div id="predictionModal">
-        <h3 id="modalTitle"></h3>
-        <ul id="modalList"></ul>
-        <button class="close-btn" onclick="closeModal()">Close</button>
-    </div>
-
-    <!-- Load the generated data file -->
+    <!-- Data -->
     <script src="data.js"></script>
 
     <script>
-        function closeModal() {
-            document.getElementById('predictionModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
+        // Tailwind script (same as landing)
+        function initializeTailwind() {
+            if (window.tailwind && window.tailwind.config) return;
+            // Tailwind is loaded via CDN; we can extend if needed
         }
 
-        // Helper to format Date objects back to readable UI strings (e.g., "Jun 15")
+        function initNavbar() {
+            const navbar = document.getElementById('navbar');
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+
+            // Navbar scroll effect
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) {
+                    navbar.classList.add('nav-scrolled');
+                } else {
+                    navbar.classList.remove('nav-scrolled');
+                }
+            });
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('predictionModal');
+            const overlay = document.getElementById('modalOverlay');
+            if (modal) modal.classList.add('hidden');
+            if (overlay) overlay.classList.add('hidden');
+        }
+
+        // Helper to format Date objects
         function formatShortDate(dateObj) {
             const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             return months[dateObj.getMonth()] + " " + dateObj.getDate();
@@ -122,18 +281,18 @@
             let dateCounts = {};
             let maxCount = 0;
 
+            if (!monsoonData || !monsoonData.prediction_names) return;
+
             monsoonData.prediction_names.forEach(function(names, index) {
-                if (names.length > 0) {
+                if (names && names.length > 0) {
                     const label = monsoonData.labels[index];
                     const dateObj = new Date(label + " 2026");
                     
-                    // Count frequencies for Mode calculation
                     dateCounts[label] = names.length;
                     if (names.length > maxCount) {
                         maxCount = names.length;
                     }
 
-                    // Add a date instance for every individual guess
                     names.forEach(function() {
                         allDates.push(dateObj);
                     });
@@ -147,15 +306,14 @@
                 return;
             }
 
-            // Sort dates chronologically
             allDates.sort(function(a, b) { return a - b; });
 
-            // 1. Calculate Range
+            // Range
             const earliest = allDates[0];
             const latest = allDates[allDates.length - 1];
             document.getElementById('stat-range').innerText = formatShortDate(earliest) + " to " + formatShortDate(latest);
 
-            // 2. Calculate Median
+            // Median
             let medianStr = "";
             const half = Math.floor(allDates.length / 2);
             if (allDates.length % 2 !== 0) {
@@ -166,14 +324,13 @@
                 if (formatShortDate(mid1) === formatShortDate(mid2)) {
                     medianStr = formatShortDate(mid1);
                 } else {
-                    // Average the two middle dates
                     const avgMs = (mid1.getTime() + mid2.getTime()) / 2;
                     medianStr = formatShortDate(new Date(avgMs));
                 }
             }
             document.getElementById('stat-median').innerText = medianStr;
 
-            // 3. Calculate Mode (supports multiple ties)
+            // Mode
             let modes = [];
             for (let label in dateCounts) {
                 if (dateCounts[label] === maxCount) {
@@ -183,13 +340,17 @@
             document.getElementById('stat-mode').innerText = modes.join(", ");
         }
 
-        if (typeof monsoonData === 'undefined') {
-            alert("Error: data.js not found. Please run the Python script first.");
-        } else {
-            // Populate stats
+        // Main chart initialization
+        function initializeChart() {
+            if (typeof monsoonData === 'undefined') {
+                alert("Error: data.js not found. Please run the Python update script.");
+                return;
+            }
+
             calculateStatistics();
 
             const ctx = document.getElementById('monsoonChart').getContext('2d');
+
             const config = {
                 type: 'line',
                 data: {
@@ -198,32 +359,31 @@
                         {
                             label: '2026 Actual Dew Point (°F)',
                             data: monsoonData.actual,
-                            borderColor: 'rgba(0, 102, 204, 1)',
-                            backgroundColor: 'rgba(0, 102, 204, 0.1)',
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56, 189, 248, 0.1)',
                             borderWidth: 3,
                             fill: false,
                             tension: 0.1,
-                            zIndex: 10,
                             pointRadius: function(context) {
                                 const idx = context.dataIndex;
                                 const val = context.raw;
                                 if (val == null) return 0;
-                                if (idx === 13) return 8; // Jun 14 monsoon onset - prominent star
-                                return val >= 54 ? 4 : 2; // green points slightly larger than non-threshold
+                                if (idx === 13) return 9; // Jun 14 onset
+                                return val >= 54 ? 4.5 : 2.5;
                             },
                             pointBackgroundColor: function(context) {
                                 const val = context.raw;
                                 if (val == null) return 'transparent';
-                                return val >= 54 ? 'green' : 'rgba(0, 102, 204, 1)';
+                                return val >= 54 ? '#22c55e' : '#38bdf8';
                             },
                             pointBorderColor: function(context) {
                                 const val = context.raw;
                                 if (val == null) return 'transparent';
-                                return val >= 54 ? 'darkgreen' : 'rgba(0, 102, 204, 1)';
+                                return val >= 54 ? '#15803d' : '#38bdf8';
                             },
                             pointBorderWidth: function(context) {
                                 const idx = context.dataIndex;
-                                return idx === 13 ? 2 : 1;
+                                return idx === 13 ? 2 : 1.5;
                             },
                             pointStyle: function(context) {
                                 const idx = context.dataIndex;
@@ -233,51 +393,56 @@
                         {
                             label: (monsoonData.gfs_mex_label || 'GFS MEX Forecast'),
                             data: (monsoonData.gfs_mex || []),
-                            borderColor: 'rgba(249, 115, 22, 1)',
+                            borderColor: '#f97316',
                             borderDash: [6, 3],
-                            borderWidth: 2,
+                            borderWidth: 2.5,
                             fill: false,
                             tension: 0.15,
                             pointRadius: 2,
-                            pointHoverRadius: 4,
-                            zIndex: 9
+                            pointHoverRadius: 4
                         },
                         {
                             label: 'Average Norm (°F)',
                             data: monsoonData.mean,
-                            borderColor: 'rgba(100, 100, 100, 0.8)',
-                            borderDash: [5, 5], borderWidth: 2, fill: false, pointRadius: 0
+                            borderColor: 'rgba(148, 163, 184, 0.7)',
+                            borderDash: [5, 5],
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0
                         },
                         {
                             label: '+1 Std Dev',
                             data: monsoonData.upper_std,
-                            borderColor: 'rgba(200, 200, 200, 0)',
-                            backgroundColor: 'rgba(200, 200, 200, 0.3)',
-                            fill: '+1', pointRadius: 0
+                            borderColor: 'rgba(148, 163, 184, 0.15)',
+                            backgroundColor: 'rgba(148, 163, 184, 0.12)',
+                            fill: '+1',
+                            pointRadius: 0
                         },
                         {
                             label: '-1 Std Dev',
                             data: monsoonData.lower_std,
-                            borderColor: 'rgba(200, 200, 200, 0)',
-                            fill: false, pointRadius: 0
+                            borderColor: 'rgba(148, 163, 184, 0.15)',
+                            fill: false,
+                            pointRadius: 0
                         },
                         {
                             label: 'Monsoon Threshold (54 °F)',
                             data: monsoonData.threshold,
-                            borderColor: 'rgba(255, 0, 0, 0.8)',
-                            borderWidth: 2, fill: false, pointRadius: 0, zIndex: 5
+                            borderColor: 'rgba(239, 68, 68, 0.7)',
+                            borderWidth: 2,
+                            fill: false,
+                            pointRadius: 0
                         },
                         {
                             type: 'line',
                             label: 'Competitor Predictions',
                             data: monsoonData.predictions_y,
-                            backgroundColor: 'rgba(255, 153, 0, 1)',
-                            borderColor: 'rgba(255, 153, 0, 1)',
+                            backgroundColor: '#fb923c',
+                            borderColor: '#fb923c',
                             pointStyle: 'triangle',
-                            pointRadius: 8,
-                            pointHoverRadius: 11,
-                            showLine: false,
-                            zIndex: 15
+                            pointRadius: 9,
+                            pointHoverRadius: 13,
+                            showLine: false
                         }
                     ]
                 },
@@ -298,11 +463,12 @@
                                         ul.innerHTML = '';
                                         names.forEach(function(name) {
                                             let li = document.createElement('li');
+                                            li.className = 'py-0.5 text-slate-300';
                                             li.innerText = name;
                                             ul.appendChild(li);
                                         });
-                                        document.getElementById('modalOverlay').style.display = 'block';
-                                        document.getElementById('predictionModal').style.display = 'block';
+                                        document.getElementById('modalOverlay').classList.remove('hidden');
+                                        document.getElementById('predictionModal').classList.remove('hidden');
                                     }
                                     return;
                                 }
@@ -322,6 +488,7 @@
                         },
                         legend: {
                             labels: {
+                                color: '#cbd5e1',
                                 filter: function(item, chart) {
                                     return !item.text.includes('Std Dev');
                                 }
@@ -330,8 +497,10 @@
                     },
                     scales: {
                         x: { 
-                            title: { display: true, text: 'Calendar Date' },
-                            ticks: {
+                            title: { display: true, text: 'Calendar Date', color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { 
+                                color: '#94a3b8',
                                 callback: function(value, index) {
                                     const label = this.chart.data.labels[index];
                                     if (label === 'Jun 14') {
@@ -341,7 +510,13 @@
                                 }
                             }
                         },
-                        y: { title: { display: true, text: 'Dew Point (°F)' }, suggestedMin: 30, suggestedMax: 70 }
+                        y: { 
+                            title: { display: true, text: 'Dew Point (°F)', color: '#94a3b8' }, 
+                            suggestedMin: 28, 
+                            suggestedMax: 72,
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' }
+                        }
                     }
                 }
             };
@@ -361,22 +536,19 @@
                         const yScale = chart.scales.y;
                         const x = xScale.getPixelForValue(june14Idx);
 
-                        // Find y of the actual star point
                         let starY = yScale.top;
                         const actualIdx = chart.data.datasets.findIndex(d => d.label === '2026 Actual Dew Point (°F)');
                         if (actualIdx >= 0) {
                             const meta = chart.getDatasetMeta(actualIdx);
                             const point = meta.data[june14Idx];
-                            if (point) {
-                                starY = point.y;
-                            }
+                            if (point) starY = point.y;
                         }
 
                         const ctx2 = chart.ctx;
                         ctx2.save();
                         ctx2.beginPath();
-                        ctx2.strokeStyle = 'green';
-                        ctx2.lineWidth = 1.5;
+                        ctx2.strokeStyle = '#22c55e';
+                        ctx2.lineWidth = 1.75;
                         ctx2.moveTo(x, starY);
                         ctx2.lineTo(x, yScale.bottom);
                         ctx2.stroke();
@@ -384,6 +556,19 @@
                     }
                 }]
             });
+        }
+
+        // Boot
+        function initializeTracker() {
+            initializeTailwind();
+            initNavbar();
+            initializeChart();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTracker);
+        } else {
+            initializeTracker();
         }
     </script>
 </body>

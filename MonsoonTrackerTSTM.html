@@ -3,97 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 First Thunderstorm Forecast Tracker</title>
+    <title>Thunderstorm Tracker • 2026 MPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .chart-container {
-            position: relative; height: 60vh; width: 90vw; background: white;
-            padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: auto;
-        }
-        h2, h3 { text-align: center; color: #333; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
         
-        /* Stats Table Styling */
-        .table-container {
-            width: 90vw; margin: 30px auto; background: white; 
-            border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden;
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
         }
-        .stats-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .stats-table th, .stats-table td { padding: 15px 20px; border-bottom: 1px solid #eef2f3; }
-        .stats-table th { background-color: #f8f9fa; color: #444; font-weight: bold; text-transform: uppercase; font-size: 0.85em; }
-        .stats-table tr:hover { background-color: #fafbfc; }
-        .highlight { font-weight: bold; color: #6f42c1; } /* Purple highlight for Thunderstorm theme */
-
-        /* Modal Popup Styles */
-        #predictionModal {
-            display: none; position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%); background: white;
-            padding: 25px; border-radius: 12px; z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-            border-top: 6px solid #6f42c1;
-            min-width: 250px;
+        .heading-font {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.025em;
         }
-        #modalTitle { margin-top: 0; color: #333; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        #modalList { list-style-type: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;}
-        #modalList li { padding: 5px 0; font-size: 1.05em; color: #555;}
-        .close-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; float: right; font-size: 1em; }
-        .close-btn:hover { background: #555; }
-        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 999; }
+        .nav-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-link:hover {
+            color: #f97316;
+            transform: translateY(-1px);
+        }
+        .canvas-container {
+            background: #020617;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+                        inset 0 1px 0 0 rgba(255,255,255,0.06);
+        }
+        .viz-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .modal {
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .stats-table th, .stats-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        }
+        .stats-table th {
+            background-color: rgba(15, 23, 42, 0.6);
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .stats-table tr:hover {
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+        .highlight {
+            font-weight: 700;
+            color: #a78bfa;
+        }
+        .prediction-modal {
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <!-- NAVBAR -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-950/95 backdrop-blur-md transition-all duration-300">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <a href="index.html" class="flex items-center gap-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/50">
+                            <i class="fa-solid fa-cloud-bolt text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-lg tracking-tighter heading-font">2026 MPC</div>
+                            <div class="text-[10px] text-slate-500 -mt-1">MONSOON PREDICTION COMPETITION</div>
+                        </div>
+                    </a>
+                </div>
 
-    <h2>First Thunderstorm Forecast (Local MST) vs Historical Trends</h2>
-    
-    <div class="chart-container">
-        <canvas id="tsChart"></canvas>
+                <div class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="index.html" class="nav-link text-slate-300 hover:text-white font-medium">Home</a>
+                    <a href="MonsoonTracker.html" class="nav-link text-slate-300 hover:text-white font-medium">Onset / Dew Point</a>
+                    <a href="MonsoonTrackerPrecip.html" class="nav-link text-slate-300 hover:text-white font-medium">Precipitation</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                       target="_blank"
+                       class="hidden md:inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-white text-slate-950 font-semibold text-sm hover:bg-amber-100 transition-colors active:scale-[0.985]">
+                        <span>Enter Forecast</span>
+                    </a>
+                    
+                    <button id="mobile-menu-btn" class="md:hidden w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-slate-950 px-6 py-3">
+            <div class="flex flex-col gap-y-1 text-sm">
+                <a href="index.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Home</a>
+                <a href="MonsoonTracker.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Onset / Dew Point</a>
+                <a href="MonsoonTrackerPrecip.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Precipitation</a>
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="mt-2 mx-1 flex items-center justify-center gap-x-2 px-4 py-2.5 rounded-2xl bg-white text-slate-950 font-semibold text-sm">
+                    Enter Forecast
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-16 max-w-screen-2xl mx-auto px-6">
+        <!-- Header -->
+        <div class="max-w-3xl pt-8 pb-6">
+            <div class="flex items-center gap-x-3 mb-3">
+                <div class="inline-flex items-center px-3 py-1 rounded-2xl bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-semibold tracking-[1.5px]">THUNDERSTORM TRACKER</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-semibold tracking-tighter heading-font mb-3">First Thunderstorm Forecast</h1>
+            <p class="text-lg text-slate-400 max-w-2xl">
+                Historical frequency of first thunderstorm dates at KTUS vs. 2026 competitor predictions.
+            </p>
+        </div>
+
+        <!-- Chart -->
+        <div class="canvas-container p-5 mb-8">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div>
+                    <div class="font-semibold tracking-tight">First Lightning / Thunderstorm Timing</div>
+                    <div class="viz-label text-orange-400">Historical distribution • Actual strike • Predictions</div>
+                </div>
+                <div class="text-xs text-slate-500 hidden md:block">Click orange triangles to see who predicted that date</div>
+            </div>
+            <div class="relative" style="height: 62vh;">
+                <canvas id="tsChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Summary Metrics Table -->
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Prediction Statistics</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Statistical Metric</th>
+                            <th>Calculated Calendar Date(s)</th>
+                            <th>Context Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Prediction Range</strong></td>
+                            <td id="stat-range" class="highlight">Loading...</td>
+                            <td>The window between the earliest and latest predicted local dates.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Median Date</strong></td>
+                            <td id="stat-median" class="highlight">Loading...</td>
+                            <td>The midpoint calendar date of all submitted predictions.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mode Date(s)</strong></td>
+                            <td id="stat-mode" class="highlight">Loading...</td>
+                            <td>The day(s) that received the highest frequency of predictions.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center text-xs text-slate-500 pb-8">
+            Historical counts from past seasons • Competitor predictions shown as triangles • Data from KTUS
+        </div>
     </div>
 
-    <!-- Summary Metrics Table -->
-    <div class="table-container">
-        <table class="stats-table">
-            <thead>
-                <tr>
-                    <th>Statistical Metric</th>
-                    <th>Calculated Calendar Date(s)</th>
-                    <th>Context Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Prediction Range</strong></td>
-                    <td id="stat-range" class="highlight">Loading...</td>
-                    <td>The window between the earliest and latest predicted local dates.</td>
-                </tr>
-                <tr>
-                    <td><strong>Median Date</strong></td>
-                    <td id="stat-median" class="highlight">Loading...</td>
-                    <td>The midpoint calendar date of all submitted predictions.</td>
-                </tr>
-                <tr>
-                    <td><strong>Mode Date(s)</strong></td>
-                    <td id="stat-mode" class="highlight">Loading...</td>
-                    <td>The day(s) that received the absolute highest frequency of predictions.</td>
-                </tr>
-            </tbody>
-        </table>
+    <!-- Prediction Modal -->
+    <div id="modalOverlay" onclick="closeModal()" class="hidden fixed inset-0 bg-black/60 z-[999]"></div>
+    <div id="predictionModal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] prediction-modal p-6 rounded-3xl shadow-2xl w-full max-w-xs modal">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4 pr-8"></h3>
+        <ul id="modalList" class="space-y-1 text-sm mb-5 max-h-60 overflow-auto"></ul>
+        <button onclick="closeModal()" 
+                class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-sm font-medium transition-colors">
+            Close
+        </button>
     </div>
 
-    <!-- The Pop-up Modal for Names -->
-    <div id="modalOverlay" onclick="closeModal()"></div>
-    <div id="predictionModal">
-        <h3 id="modalTitle"></h3>
-        <ul id="modalList"></ul>
-        <button class="close-btn" onclick="closeModal()">Close</button>
-    </div>
-
-    <!-- Load the generated data file -->
     <script src="ts_data.js"></script>
 
     <script>
+        function initializeTailwind() {}
+
+        function initNavbar() {
+            const navbar = document.getElementById('navbar');
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            }
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) navbar.classList.add('nav-scrolled');
+                else navbar.classList.remove('nav-scrolled');
+            });
+        }
+
         function closeModal() {
-            document.getElementById('predictionModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
+            const modal = document.getElementById('predictionModal');
+            const overlay = document.getElementById('modalOverlay');
+            if (modal) modal.classList.add('hidden');
+            if (overlay) overlay.classList.add('hidden');
         }
 
         function formatShortDate(dateObj) {
@@ -105,6 +246,8 @@
             let allDates = [];
             let dateCounts = {};
             let maxCount = 0;
+
+            if (!tsData || !tsData.prediction_names) return;
 
             tsData.prediction_names.forEach(function(names, index) {
                 if (names && names.length > 0) {
@@ -127,14 +270,12 @@
 
             allDates.sort(function(a, b) { return a - b; });
 
-            // Range
             const earliest = allDates[0];
             const latest = allDates[allDates.length - 1];
             document.getElementById('stat-range').innerText = formatShortDate(earliest) + " to " + formatShortDate(latest);
 
-            // Median
-            let medianStr = "";
             const half = Math.floor(allDates.length / 2);
+            let medianStr = "";
             if (allDates.length % 2 !== 0) {
                 medianStr = formatShortDate(allDates[half]);
             } else {
@@ -149,7 +290,6 @@
             }
             document.getElementById('stat-median').innerText = medianStr;
 
-            // Mode
             let modes = [];
             for (let label in dateCounts) {
                 if (dateCounts[label] === maxCount) {
@@ -159,9 +299,12 @@
             document.getElementById('stat-mode').innerText = modes.join(", ");
         }
 
-        if (typeof tsData === 'undefined') {
-            alert("Error: ts_data.js not found. Please run the Python script first.");
-        } else {
+        function initializeChart() {
+            if (typeof tsData === 'undefined') {
+                alert("Error: ts_data.js not found. Please run the Python update script.");
+                return;
+            }
+
             calculateStatistics();
 
             if (!tsData.actual) {
@@ -169,6 +312,7 @@
             }
 
             const ctx = document.getElementById('tsChart').getContext('2d');
+
             const config = {
                 type: 'bar',
                 data: {
@@ -178,38 +322,36 @@
                             type: 'bar',
                             label: 'Historical First Thunderstorm Frequency',
                             data: tsData.hist_counts,
-                            backgroundColor: 'rgba(111, 66, 193, 0.6)', /* Purple styling for storm theme */
-                            borderColor: 'rgba(111, 66, 193, 1)',
+                            backgroundColor: 'rgba(167, 139, 250, 0.55)',
+                            borderColor: 'rgba(167, 139, 250, 0.9)',
                             borderWidth: 1,
                             yAxisID: 'y'
                         },
                         {
                             type: 'line',
-                            label: '⚡ Actual First Lightning Strike (Jun 14)',
+                            label: '⚡ Actual First Lightning Strike',
                             data: tsData.actual,
-                            borderColor: 'rgba(255, 215, 0, 1)',
-                            backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                            borderColor: '#facc15',
+                            backgroundColor: '#facc15',
                             pointStyle: 'star',
-                            pointRadius: 14,
-                            pointHoverRadius: 18,
-                            pointBorderColor: 'rgba(255, 140, 0, 1)',
+                            pointRadius: 15,
+                            pointHoverRadius: 19,
+                            pointBorderColor: '#f59e0b',
                             pointBorderWidth: 2,
                             showLine: false,
-                            yAxisID: 'y',
-                            zIndex: 20
+                            yAxisID: 'y'
                         },
                         {
                             type: 'line',
                             label: 'Competitor Predictions (Local Date)',
                             data: tsData.predictions_y,
-                            backgroundColor: 'rgba(255, 153, 0, 1)',
-                            borderColor: 'rgba(255, 153, 0, 1)',
+                            backgroundColor: '#fb923c',
+                            borderColor: '#fb923c',
                             pointStyle: 'triangle',
-                            pointRadius: 8,
-                            pointHoverRadius: 11,
+                            pointRadius: 9,
+                            pointHoverRadius: 13,
                             showLine: false,
-                            yAxisID: 'yPredictionScale', /* Maps to secondary hidden scale */
-                            zIndex: 15
+                            yAxisID: 'yPredictionScale'
                         }
                     ]
                 },
@@ -230,11 +372,12 @@
                                         ul.innerHTML = '';
                                         names.forEach(function(name) {
                                             let li = document.createElement('li');
+                                            li.className = 'py-0.5 text-slate-300';
                                             li.innerText = name;
                                             ul.appendChild(li);
                                         });
-                                        document.getElementById('modalOverlay').style.display = 'block';
-                                        document.getElementById('predictionModal').style.display = 'block';
+                                        document.getElementById('modalOverlay').classList.remove('hidden');
+                                        document.getElementById('predictionModal').classList.remove('hidden');
                                     }
                                     return;
                                 }
@@ -254,16 +397,26 @@
                                     return context.parsed.y + ' Historical Occurrences';
                                 }
                             }
+                        },
+                        legend: {
+                            labels: {
+                                color: '#cbd5e1'
+                            }
                         }
                     },
                     scales: {
-                        x: { title: { display: true, text: 'Calendar Date' } },
-                        y: { 
-                            title: { display: true, text: 'Number of Years' },
-                            beginAtZero: true,
-                            suggestedMax: Math.max(...tsData.hist_counts) + 1
+                        x: { 
+                            title: { display: true, text: 'Calendar Date', color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' }
                         },
-                        /* Hidden scale to perfectly align the triangles at the bottom edge */
+                        y: { 
+                            title: { display: true, text: 'Number of Years', color: '#94a3b8' },
+                            beginAtZero: true,
+                            suggestedMax: Math.max(...tsData.hist_counts) + 1,
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' }
+                        },
                         yPredictionScale: {
                             display: false,
                             min: -0.2,
@@ -274,6 +427,18 @@
             };
 
             new Chart(ctx, config);
+        }
+
+        function initializeTracker() {
+            initializeTailwind();
+            initNavbar();
+            initializeChart();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTracker);
+        } else {
+            initializeTracker();
         }
     </script>
 </body>

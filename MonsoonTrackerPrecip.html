@@ -3,94 +3,244 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2026 Monsoon Precipitation Haywood Plot</title>
+    <title>Precipitation Tracker • 2026 MPC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f7f6; padding: 20px; }
-        .chart-container {
-            position: relative; height: 70vh; width: 90vw; background: white;
-            padding: 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin: auto;
-        }
-        h2 { text-align: center; color: #333; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
         
-        /* Stats Table */
-        .table-container { width: 90vw; margin: 30px auto; background: white; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; }
-        .stats-table { width: 100%; border-collapse: collapse; text-align: left; }
-        .stats-table th, .stats-table td { padding: 15px 20px; border-bottom: 1px solid #eef2f3; }
-        .stats-table th { background-color: #f8f9fa; color: #444; font-weight: bold; text-transform: uppercase; font-size: 0.85em; }
-        .stats-table tr:hover { background-color: #fafbfc; }
-        .highlight { font-weight: bold; color: #008080; }
-
-        /* Modal Popup */
-        #predictionModal {
-            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: white; padding: 25px; border-radius: 12px; z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.3); border-top: 6px solid #ff9900; min-width: 250px;
+        body {
+            font-family: 'Inter', system_ui, sans-serif;
         }
-        #modalTitle { margin-top: 0; color: #333; font-size: 1.2em; border-bottom: 1px solid #eee; padding-bottom: 10px;}
-        #modalList { list-style-type: none; padding: 0; margin: 15px 0; max-height: 300px; overflow-y: auto;}
-        #modalList li { padding: 5px 0; font-size: 1.05em; color: #555;}
-        .close-btn { background: #333; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; float: right; font-size: 1em; }
-        .close-btn:hover { background: #555; }
-        #modalOverlay { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.4); z-index: 999; }
+        .heading-font {
+            font-family: 'Space Grotesk', 'Inter', system_ui, sans-serif;
+            font-weight: 600;
+            letter-spacing: -0.025em;
+        }
+        .nav-link {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .nav-link:hover {
+            color: #f97316;
+            transform: translateY(-1px);
+        }
+        .canvas-container {
+            background: #020617;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.3),
+                        inset 0 1px 0 0 rgba(255,255,255,0.06);
+        }
+        .viz-label {
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+        .modal {
+            animation: modalPop 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        @keyframes modalPop {
+            from {
+                opacity: 0;
+                transform: scale(0.96) translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
+        }
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        .stats-table th, .stats-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+        }
+        .stats-table th {
+            background-color: rgba(15, 23, 42, 0.6);
+            color: #94a3b8;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        .stats-table tr:hover {
+            background-color: rgba(15, 23, 42, 0.4);
+        }
+        .highlight {
+            font-weight: 700;
+            color: #fb923c;
+        }
+        .prediction-modal {
+            background: #0f172a;
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
     </style>
 </head>
-<body>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <!-- NAVBAR -->
+    <nav id="navbar" class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-950/95 backdrop-blur-md transition-all duration-300">
+        <div class="max-w-screen-2xl mx-auto">
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center gap-x-3">
+                    <a href="index.html" class="flex items-center gap-x-2.5">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/50">
+                            <i class="fa-solid fa-cloud-bolt text-white text-xl"></i>
+                        </div>
+                        <div>
+                            <div class="font-semibold text-lg tracking-tighter heading-font">2026 MPC</div>
+                            <div class="text-[10px] text-slate-500 -mt-1">MONSOON PREDICTION COMPETITION</div>
+                        </div>
+                    </a>
+                </div>
 
-    <h2>Monsoon Accumulated Precipitation (Haywood Plot)</h2>
-    
-    <div class="chart-container">
-        <canvas id="precipChart"></canvas>
+                <div class="hidden md:flex items-center gap-x-8 text-sm">
+                    <a href="index.html" class="nav-link text-slate-300 hover:text-white font-medium">Home</a>
+                    <a href="MonsoonTracker.html" class="nav-link text-slate-300 hover:text-white font-medium">Onset / Dew Point</a>
+                    <a href="MonsoonTrackerTSTM.html" class="nav-link text-slate-300 hover:text-white font-medium">Thunderstorms</a>
+                </div>
+
+                <div class="flex items-center gap-x-3">
+                    <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                       target="_blank"
+                       class="hidden md:inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-white text-slate-950 font-semibold text-sm hover:bg-amber-100 transition-colors active:scale-[0.985]">
+                        <span>Enter Forecast</span>
+                    </a>
+                    
+                    <button id="mobile-menu-btn" class="md:hidden w-9 h-9 flex items-center justify-center text-slate-400 hover:text-white transition-colors">
+                        <i class="fa-solid fa-bars text-lg"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div id="mobile-menu" class="hidden md:hidden border-t border-white/10 bg-slate-950 px-6 py-3">
+            <div class="flex flex-col gap-y-1 text-sm">
+                <a href="index.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Home</a>
+                <a href="MonsoonTracker.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Onset / Dew Point</a>
+                <a href="MonsoonTrackerTSTM.html" class="mobile-nav-link px-4 py-2.5 rounded-2xl hover:bg-white/5">Thunderstorms</a>
+                <a href="https://forms.office.com/Pages/ResponsePage.aspx?id=DQSIkWdsW0yxEjajBLZtrQAAAAAAAAAAAAa__YHMA3VUN0dGRTlGS1hZTTlOMDZZMlpYNEgwUzBIQS4u" 
+                   target="_blank"
+                   class="mt-2 mx-1 flex items-center justify-center gap-x-2 px-4 py-2.5 rounded-2xl bg-white text-slate-950 font-semibold text-sm">
+                    Enter Forecast
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="pt-16 max-w-screen-2xl mx-auto px-6">
+        <!-- Header -->
+        <div class="max-w-3xl pt-8 pb-6">
+            <div class="flex items-center gap-x-3 mb-3">
+                <div class="inline-flex items-center px-3 py-1 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-400 text-xs font-semibold tracking-[1.5px]">PRECIPITATION TRACKER</div>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-semibold tracking-tighter heading-font mb-3">Total Precipitation (Haywood Plot)</h1>
+            <p class="text-lg text-slate-400 max-w-2xl">
+                Season-to-date cumulative rainfall at KTUS. Competitor forecasts are shown as markers at season end.
+            </p>
+        </div>
+
+        <!-- Chart -->
+        <div class="canvas-container p-5 mb-8">
+            <div class="flex items-center justify-between mb-3 px-1">
+                <div>
+                    <div class="font-semibold tracking-tight">Cumulative Precipitation</div>
+                    <div class="viz-label text-orange-400">Actuals • Historical • Competitor Forecasts</div>
+                </div>
+                <div class="text-xs text-slate-500 hidden md:block">Click forecast markers to see who predicted that total</div>
+            </div>
+            <div class="relative" style="height: 80vh;">
+                <canvas id="precipChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Summary Metrics Table -->
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Forecast Summary</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <table class="stats-table">
+                    <thead>
+                        <tr>
+                            <th>Forecast Metric</th>
+                            <th>Calculated Value (Inches)</th>
+                            <th>Context Description</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Mean Prediction</strong></td>
+                            <td id="stat-mean" class="highlight">Loading...</td>
+                            <td>The average predicted total precipitation across all forecasters.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Maximum Prediction</strong></td>
+                            <td id="stat-max" class="highlight">Loading...</td>
+                            <td>The highest volume of rain predicted for the 2026 season.</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Minimum Prediction</strong></td>
+                            <td id="stat-min" class="highlight">Loading...</td>
+                            <td>The lowest volume of rain predicted for the 2026 season.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="text-center text-xs text-slate-500 pb-8">
+            Cumulative from June 15 • Competitor predictions shown as markers • Data from KTUS ASOS
+        </div>
     </div>
 
-    <!-- Summary Metrics Table -->
-    <div class="table-container">
-        <table class="stats-table">
-            <thead>
-                <tr>
-                    <th>Forecast Metric</th>
-                    <th>Calculated Value (Inches)</th>
-                    <th>Context Description</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td><strong>Mean Prediction</strong></td>
-                    <td id="stat-mean" class="highlight">Loading...</td>
-                    <td>The average predicted total precipitation across all forecasters.</td>
-                </tr>
-                <tr>
-                    <td><strong>Maximum Prediction</strong></td>
-                    <td id="stat-max" class="highlight">Loading...</td>
-                    <td>The highest volume of rain predicted for the 2026 season.</td>
-                </tr>
-                <tr>
-                    <td><strong>Minimum Prediction</strong></td>
-                    <td id="stat-min" class="highlight">Loading...</td>
-                    <td>The lowest volume of rain predicted for the 2026 season.</td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Pop-up Modal -->
-    <div id="modalOverlay" onclick="closeModal()"></div>
-    <div id="predictionModal">
-        <h3 id="modalTitle"></h3>
-        <ul id="modalList"></ul>
-        <button class="close-btn" onclick="closeModal()">Close</button>
+    <!-- Prediction Modal -->
+    <div id="modalOverlay" onclick="closeModal()" class="hidden fixed inset-0 bg-black/60 z-[999]"></div>
+    <div id="predictionModal" class="hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[1000] prediction-modal p-6 rounded-3xl shadow-2xl w-full max-w-xs modal">
+        <h3 id="modalTitle" class="text-lg font-semibold mb-4 pr-8"></h3>
+        <ul id="modalList" class="space-y-1 text-sm mb-5 max-h-60 overflow-auto"></ul>
+        <button onclick="closeModal()" 
+                class="w-full py-2.5 rounded-2xl bg-white/10 hover:bg-white/15 text-sm font-medium transition-colors">
+            Close
+        </button>
     </div>
 
     <script src="precip_data.js"></script>
 
     <script>
+        function initializeTailwind() {}
+
+        function initNavbar() {
+            const navbar = document.getElementById('navbar');
+            const mobileBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+
+            if (mobileBtn && mobileMenu) {
+                mobileBtn.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+            }
+
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 20) navbar.classList.add('nav-scrolled');
+                else navbar.classList.remove('nav-scrolled');
+            });
+        }
+
         function closeModal() {
-            document.getElementById('predictionModal').style.display = 'none';
-            document.getElementById('modalOverlay').style.display = 'none';
+            const modal = document.getElementById('predictionModal');
+            const overlay = document.getElementById('modalOverlay');
+            if (modal) modal.classList.add('hidden');
+            if (overlay) overlay.classList.add('hidden');
         }
 
         function calculateStatistics() {
             let allPredictions = [];
+            if (!precipData || !precipData.prediction_points) return;
+
             precipData.prediction_points.forEach(function(p) {
                 p.names.forEach(function() {
                     allPredictions.push(p.y);
@@ -114,9 +264,12 @@
             document.getElementById('stat-min').innerText = min.toFixed(2) + '"';
         }
 
-        if (typeof precipData === 'undefined') {
-            alert("Error: precip_data.js not found. Please run the Python script first.");
-        } else {
+        function initializeChart() {
+            if (typeof precipData === 'undefined') {
+                alert("Error: precip_data.js not found. Please run the Python update script.");
+                return;
+            }
+
             calculateStatistics();
 
             const chartDatasets = [
@@ -124,14 +277,12 @@
                     type: 'line',
                     label: '2026 Actual (Current)',
                     data: precipData.actual_2026,
-                    borderColor: 'rgba(0, 102, 204, 1)',
+                    borderColor: '#38bdf8',
                     borderWidth: 4,
                     stepped: true,
                     fill: false,
-                    pointRadius: 0,
-                    zIndex: 20
+                    pointRadius: 0
                 },
-                // Special point for latest cumulative total (for mouseover/click)
                 (function() {
                     let lastIdx = -1;
                     let lastVal = null;
@@ -149,90 +300,81 @@
                         type: 'line',
                         label: 'Current Total (' + lastVal.toFixed(2) + '")',
                         data: y_arr,
-                        borderColor: 'rgba(255, 0, 0, 1)',
-                        backgroundColor: 'rgba(255, 0, 0, 1)',
-                        pointRadius: 6,
-                        pointHoverRadius: 10,
+                        borderColor: '#f97316',
+                        backgroundColor: '#f97316',
+                        pointRadius: 7,
+                        pointHoverRadius: 11,
                         pointBorderWidth: 2,
-                        showLine: false,
-                        zIndex: 25
+                        showLine: false
                     };
                 })(),
                 {
                     type: 'line',
                     label: '2021 (Wettest)',
                     data: precipData.actual_2021,
-                    borderColor: 'rgba(34, 139, 34, 0.7)',
+                    borderColor: 'rgba(52, 211, 153, 0.75)',
                     borderWidth: 2,
                     stepped: true,
                     fill: false,
-                    pointRadius: 0,
-                    zIndex: 10
+                    pointRadius: 0
                 },
                 {
                     type: 'line',
                     label: '2020 (Driest)',
                     data: precipData.actual_2020,
-                    borderColor: 'rgba(210, 105, 30, 0.7)',
+                    borderColor: 'rgba(251, 146, 60, 0.7)',
                     borderWidth: 2,
                     stepped: true,
                     fill: false,
-                    pointRadius: 0,
-                    zIndex: 10
+                    pointRadius: 0
                 },
                 {
                     type: 'line',
                     label: 'Historical Mean',
                     data: precipData.mean,
-                    borderColor: 'rgba(100, 100, 100, 1)',
+                    borderColor: 'rgba(148, 163, 184, 0.85)',
                     borderDash: [5, 5],
                     borderWidth: 2,
                     fill: false,
-                    pointRadius: 0,
-                    zIndex: 5
+                    pointRadius: 0
                 },
                 {
                     type: 'line',
                     label: '+1 Std Dev',
                     data: precipData.upper_std,
-                    borderColor: 'rgba(200, 200, 200, 0)',
-                    backgroundColor: 'rgba(100, 150, 255, 0.15)',
+                    borderColor: 'rgba(148, 163, 184, 0.15)',
+                    backgroundColor: 'rgba(148, 163, 184, 0.1)',
                     fill: '+1',
-                    pointRadius: 0,
-                    zIndex: 1
+                    pointRadius: 0
                 },
                 {
                     type: 'line',
                     label: '-1 Std Dev',
                     data: precipData.lower_std,
-                    borderColor: 'rgba(200, 200, 200, 0)',
+                    borderColor: 'rgba(148, 163, 184, 0.15)',
                     fill: false,
-                    pointRadius: 0,
-                    zIndex: 1
+                    pointRadius: 0
                 }
             ].filter(Boolean);
 
-            // Map each prediction value exactly to the final X-axis index using a padded array
+            // Competitor predictions as prominent markers at end of season
             let isFirstPrediction = true;
             precipData.prediction_points.forEach(function(pt) {
-                // Create array of nulls matching labels length
                 let y_array = new Array(precipData.labels.length).fill(null);
-                // Assign value strictly to the last day (Sep 30)
                 y_array[y_array.length - 1] = pt.y;
 
                 chartDatasets.push({
                     type: 'line',
                     label: isFirstPrediction ? 'Competitor Predictions' : ('Forecast: ' + pt.y),
                     data: y_array,
-                    _namesData: pt.names, // Store names for onclick retrieval
-                    backgroundColor: 'rgba(255, 153, 0, 1)',
-                    borderColor: 'rgba(255, 153, 0, 1)',
-                    pointStyle: 'dash',  // Changes marker to a horizontal dash
-                    pointRadius: 10,     // Determines the width of the dash
-                    pointHoverRadius: 14,
-                    borderWidth: 4,      // Determines the thickness of the dash
-                    showLine: false,
-                    zIndex: 25
+                    _namesData: pt.names,
+                    backgroundColor: '#fb923c',
+                    borderColor: '#fb923c',
+                    pointStyle: 'rectRot',
+                    pointRadius: 9,
+                    pointHoverRadius: 13,
+                    borderWidth: 0,
+                    showLine: false
                 });
                 isFirstPrediction = false;
             });
@@ -247,14 +389,12 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     onClick: function(event, elements, chart) {
-                        // Strict intersection point click
                         const activePoints = chart.getElementsAtEventForMode(event, 'nearest', { intersect: true }, true);
                         
                         if (activePoints.length > 0) {
                             const el = activePoints[0];
                             const dataset = chart.data.datasets[el.datasetIndex];
                             
-                            // Check if clicked item is one of our forecast dashes
                             if (dataset.label === 'Competitor Predictions' || dataset.label.startsWith('Forecast:')) {
                                 const names = dataset._namesData;
                                 const val = dataset.data[el.index];
@@ -265,11 +405,12 @@
                                     ul.innerHTML = '';
                                     names.forEach(function(name) {
                                         let li = document.createElement('li');
+                                        li.className = 'py-0.5 text-slate-300';
                                         li.innerText = name;
                                         ul.appendChild(li);
                                     });
-                                    document.getElementById('modalOverlay').style.display = 'block';
-                                    document.getElementById('predictionModal').style.display = 'block';
+                                    document.getElementById('modalOverlay').classList.remove('hidden');
+                                    document.getElementById('predictionModal').classList.remove('hidden');
                                 }
                             }
                         }
@@ -277,7 +418,6 @@
                     plugins: {
                         tooltip: {
                             filter: function(tooltipItem) {
-                                // Disable native hover box for the prediction dashes
                                 return tooltipItem.dataset.label !== 'Competitor Predictions' && !tooltipItem.dataset.label.startsWith('Forecast:');
                             },
                             callbacks: {
@@ -288,21 +428,42 @@
                         },
                         legend: {
                             labels: {
+                                color: '#cbd5e1',
                                 filter: function(item, chart) {
-                                    // Keep legend clean
                                     return !item.text.includes('Std Dev') && !item.text.startsWith('Forecast:');
                                 }
                             }
                         }
                     },
                     scales: {
-                        x: { title: { display: true, text: 'Calendar Date' } },
-                        y: { title: { display: true, text: 'Accumulated Precipitation (Inches)' }, beginAtZero: true }
+                        x: { 
+                            title: { display: true, text: 'Calendar Date', color: '#94a3b8' },
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Accumulated Precipitation (Inches)', color: '#94a3b8' }, 
+                            beginAtZero: true,
+                            grid: { color: 'rgba(148, 163, 184, 0.12)' },
+                            ticks: { color: '#94a3b8' }
+                        }
                     }
                 }
             };
 
             new Chart(ctx, config);
+        }
+
+        function initializeTracker() {
+            initializeTailwind();
+            initNavbar();
+            initializeChart();
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeTracker);
+        } else {
+            initializeTracker();
         }
     </script>
 </body>
