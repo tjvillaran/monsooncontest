@@ -598,6 +598,20 @@
                         ctx2.stroke();
                         ctx2.restore();
                     }
+                }, {
+                    id: 'highlightOnTop',
+                    afterDatasetsDraw: function(chart) {
+                        if (highlightedOnsetIndex == null) return;
+                        const dsIndex = chart.data.datasets.findIndex(function(d) {
+                            return d.label === 'Competitor Predictions';
+                        });
+                        if (dsIndex < 0) return;
+                        const point = chart.getDatasetMeta(dsIndex).data[highlightedOnsetIndex];
+                        if (!point || point.skip) return;
+                        chart.ctx.save();
+                        point.draw(chart.ctx, chart.chartArea);
+                        chart.ctx.restore();
+                    }
                 }]
             });
             buildOnsetScoreTable();

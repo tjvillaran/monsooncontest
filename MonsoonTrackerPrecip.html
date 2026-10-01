@@ -500,6 +500,24 @@
                 }
             };
 
+            config.plugins = [{
+                id: 'highlightOnTop',
+                afterDatasetsDraw: function(chart) {
+                    if (!highlightedPrecipName) return;
+                    chart.data.datasets.forEach(function(dataset, i) {
+                        const names = dataset._namesData || [];
+                        if (names.indexOf(highlightedPrecipName) < 0) return;
+                        const meta = chart.getDatasetMeta(i);
+                        if (!meta || meta.hidden) return;
+                        meta.data.forEach(function(point) {
+                            if (!point || point.skip) return;
+                            chart.ctx.save();
+                            point.draw(chart.ctx, chart.chartArea);
+                            chart.ctx.restore();
+                        });
+                    });
+                }
+            }];
             precipChart = new Chart(ctx, config);
             buildPrecipScoreTable();
         }

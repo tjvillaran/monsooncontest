@@ -471,6 +471,21 @@
                 }
             };
 
+            config.plugins = [{
+                id: 'highlightOnTop',
+                afterDatasetsDraw: function(chart) {
+                    if (highlightedTstmIndex == null) return;
+                    const dsIndex = chart.data.datasets.findIndex(function(d) {
+                        return d.label && d.label.indexOf('Competitor Predictions') >= 0;
+                    });
+                    if (dsIndex < 0) return;
+                    const point = chart.getDatasetMeta(dsIndex).data[highlightedTstmIndex];
+                    if (!point || point.skip) return;
+                    chart.ctx.save();
+                    point.draw(chart.ctx, chart.chartArea);
+                    chart.ctx.restore();
+                }
+            }];
             tstmChart = new Chart(ctx, config);
             buildTstmScoreTable();
         }
