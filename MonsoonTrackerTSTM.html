@@ -75,6 +75,11 @@
             font-weight: 700;
             color: #a78bfa;
         }
+        .score-scroll { max-height: 32rem; overflow: auto; }
+        .score-table thead th { position: sticky; top: 0; z-index: 2; background: #0f172a; }
+        .score-table tbody tr { cursor: pointer; }
+        .score-table tbody tr.selected { background: rgba(250, 204, 21, 0.16); box-shadow: inset 3px 0 0 #facc15; }
+        .score-table .num { font-variant-numeric: tabular-nums; text-align: right; }
         .prediction-modal {
             background: #0f172a;
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -153,10 +158,35 @@
                     <div class="font-semibold tracking-tight">First Lightning / Thunderstorm Timing</div>
                     <div class="viz-label text-orange-400">Historical distribution • Actual strike • Predictions</div>
                 </div>
-                <div class="text-xs text-slate-500 hidden md:block">Click orange triangles to see who predicted that date</div>
+                <div class="text-xs text-slate-500 hidden md:block">Click a name below to highlight their triangle</div>
             </div>
             <div class="relative" style="height: 62vh;">
                 <canvas id="tsChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Lightning Standings</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <p class="text-sm text-slate-400 mb-3 px-1">Actual first strike <span id="score-actual" class="text-white">—</span>. Error is the square root of the hour difference. Click a name to highlight their triangle.</p>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <div class="score-scroll">
+                    <table class="stats-table score-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Forecaster</th>
+                                <th class="num">Prediction</th>
+                                <th class="num">Days off</th>
+                                <th class="num">Hours off</th>
+                                <th class="num">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="score-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -350,8 +380,21 @@
                             backgroundColor: '#fb923c',
                             borderColor: '#fb923c',
                             pointStyle: 'triangle',
-                            pointRadius: 9,
-                            pointHoverRadius: 13,
+                            pointRadius: function(context) {
+                                return context.dataIndex === highlightedTstmIndex ? 16 : 9;
+                            },
+                            pointHoverRadius: function(context) {
+                                return context.dataIndex === highlightedTstmIndex ? 18 : 13;
+                            },
+                            pointBackgroundColor: function(context) {
+                                return context.dataIndex === highlightedTstmIndex ? '#facc15' : '#fb923c';
+                            },
+                            pointBorderColor: function(context) {
+                                return context.dataIndex === highlightedTstmIndex ? '#ffffff' : '#fb923c';
+                            },
+                            pointBorderWidth: function(context) {
+                                return context.dataIndex === highlightedTstmIndex ? 3 : 0;
+                            },
                             showLine: false,
                             yAxisID: 'yPredictionScale'
                         }
@@ -428,7 +471,67 @@
                 }
             };
 
-            new Chart(ctx, config);
+            tstmChart = new Chart(ctx, config);
+            buildTstmScoreTable();
+        }
+
+        let tstmChart = null;
+        let highlightedTstmIndex = null;
+
+        function dayOffLabel(diff) {
+            if (diff === 0) return 'Exact';
+            if (diff > 0) return diff + ' late';
+            return Math.abs(diff) + ' early';
+        }
+
+        function highlightTstm(idx) {
+            highlightedTstmIndex = highlightedTstmIndex === idx ? null : idx;
+            document.querySelectorAll('#score-body tr').forEach(function(row) {
+                row.classList.toggle('selected', highlightedTstmIndex !== null && Number(row.dataset.index) === highlightedTstmIndex);
+            });
+            if (tstmChart) tstmChart.update();
+            if (highlightedTstmIndex !== null) {
+                document.getElementById('tsChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function buildTstmScoreTable() {
+            const actualIdx = (tsData.actual || []).findIndex(function(v) { return v != null; });
+            document.getElementById('score-actual').textContent = actualIdx < 0 ? '—' : tsData.labels[actualIdx];
+            const people = [];
+            (tsData.prediction_names || []).forEach(function(names, idx) {
+                (names || []).forEach(function(name) {
+                    if (!name || actualIdx < 0) return;
+                    const diff = idx - actualIdx;
+                    const hours = Math.abs(diff) * 24;
+                    people.push({
+                        name: name,
+                        idx: idx,
+                        label: tsData.labels[idx],
+                        diff: diff,
+                        hours: hours,
+                        error: Math.sqrt(hours)
+                    });
+                });
+            });
+            people.sort(function(a, b) {
+                return a.error - b.error || a.name.localeCompare(b.name);
+            });
+            const tbody = document.getElementById('score-body');
+            tbody.innerHTML = '';
+            people.forEach(function(person, rank) {
+                const tr = document.createElement('tr');
+                tr.dataset.index = person.idx;
+                tr.innerHTML =
+                    '<td>' + (rank + 1) + '</td>' +
+                    '<td class="font-medium text-white">' + person.name + '</td>' +
+                    '<td class="num">' + person.label + '</td>' +
+                    '<td class="num">' + dayOffLabel(person.diff) + '</td>' +
+                    '<td class="num">' + person.hours + '</td>' +
+                    '<td class="num font-semibold text-white">' + person.error.toFixed(2) + '</td>';
+                tr.addEventListener('click', function() { highlightTstm(person.idx); });
+                tbody.appendChild(tr);
+            });
         }
 
         function initializeTracker() {

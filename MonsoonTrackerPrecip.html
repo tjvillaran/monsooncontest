@@ -75,6 +75,11 @@
             font-weight: 700;
             color: #fb923c;
         }
+        .score-scroll { max-height: 32rem; overflow: auto; }
+        .score-table thead th { position: sticky; top: 0; z-index: 2; background: #0f172a; }
+        .score-table tbody tr { cursor: pointer; }
+        .score-table tbody tr.selected { background: rgba(250, 204, 21, 0.16); box-shadow: inset 3px 0 0 #facc15; }
+        .score-table .num { font-variant-numeric: tabular-nums; text-align: right; }
         .prediction-modal {
             background: #0f172a;
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -153,10 +158,34 @@
                     <div class="font-semibold tracking-tight">Cumulative Precipitation</div>
                     <div class="viz-label text-orange-400">Actuals • Historical • Competitor Forecasts</div>
                 </div>
-                <div class="text-xs text-slate-500 hidden md:block">Click forecast markers to see who predicted that total</div>
+                <div class="text-xs text-slate-500 hidden md:block">Click a name below to highlight their marker</div>
             </div>
             <div class="relative" style="height: 80vh;">
                 <canvas id="precipChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Precip Standings</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <p class="text-sm text-slate-400 mb-3 px-1">Actual total <span id="score-actual" class="text-white">—</span>. Error is the inch difference divided by the modified standard deviation (forecasts below the mean only). Click a name to highlight their marker.</p>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <div class="score-scroll">
+                    <table class="stats-table score-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Forecaster</th>
+                                <th class="num">Forecast</th>
+                                <th class="num">Inches off</th>
+                                <th class="num">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="score-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -373,8 +402,26 @@
                     backgroundColor: '#fb923c',
                     borderColor: '#fb923c',
                     pointStyle: 'rectRot',
-                    pointRadius: 9,
-                    pointHoverRadius: 13,
+                    pointRadius: function(context) {
+                        const names = context.dataset._namesData || [];
+                        return names.indexOf(highlightedPrecipName) >= 0 ? 16 : 9;
+                    },
+                    pointHoverRadius: function(context) {
+                        const names = context.dataset._namesData || [];
+                        return names.indexOf(highlightedPrecipName) >= 0 ? 18 : 13;
+                    },
+                    pointBackgroundColor: function(context) {
+                        const names = context.dataset._namesData || [];
+                        return names.indexOf(highlightedPrecipName) >= 0 ? '#facc15' : '#fb923c';
+                    },
+                    pointBorderColor: function(context) {
+                        const names = context.dataset._namesData || [];
+                        return names.indexOf(highlightedPrecipName) >= 0 ? '#ffffff' : '#fb923c';
+                    },
+                    pointBorderWidth: function(context) {
+                        const names = context.dataset._namesData || [];
+                        return names.indexOf(highlightedPrecipName) >= 0 ? 3 : 0;
+                    },
                     borderWidth: 0,
                     showLine: false
                 });
@@ -453,7 +500,74 @@
                 }
             };
 
-            new Chart(ctx, config);
+            precipChart = new Chart(ctx, config);
+            buildPrecipScoreTable();
+        }
+
+        let precipChart = null;
+        let highlightedPrecipName = null;
+
+        function inchOffLabel(diff) {
+            if (Math.abs(diff) < 0.005) return 'Exact';
+            if (diff > 0) return '+' + diff.toFixed(2) + '" high';
+            return diff.toFixed(2) + '" low';
+        }
+
+        function sampleStdev(values) {
+            if (values.length < 2) return 1;
+            const mean = values.reduce(function(s, v) { return s + v; }, 0) / values.length;
+            const ss = values.reduce(function(s, v) { return s + (v - mean) * (v - mean); }, 0);
+            return Math.sqrt(ss / (values.length - 1));
+        }
+
+        function highlightPrecip(name) {
+            highlightedPrecipName = highlightedPrecipName === name ? null : name;
+            document.querySelectorAll('#score-body tr').forEach(function(row) {
+                row.classList.toggle('selected', highlightedPrecipName !== null && row.dataset.name === highlightedPrecipName);
+            });
+            if (precipChart) precipChart.update();
+            if (highlightedPrecipName !== null) {
+                document.getElementById('precipChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function buildPrecipScoreTable() {
+            const filled = (precipData.actual_2026 || []).filter(function(v) { return v != null; });
+            const actual = filled.length ? filled[filled.length - 1] : null;
+            document.getElementById('score-actual').textContent = actual == null ? '—' : actual.toFixed(2) + '"';
+            const people = [];
+            (precipData.prediction_points || []).forEach(function(point) {
+                (point.names || []).forEach(function(name) {
+                    if (!name || point.y == null) return;
+                    people.push({ name: name, y: point.y });
+                });
+            });
+            const values = people.map(function(p) { return p.y; });
+            const mean = values.reduce(function(s, v) { return s + v; }, 0) / values.length;
+            const below = values.filter(function(v) { return v < mean; });
+            const modSd = sampleStdev(below);
+            people.forEach(function(person) {
+                const diff = person.y - actual;
+                person.diff = diff;
+                person.error = Math.abs(diff) / modSd;
+            });
+            people.sort(function(a, b) {
+                return a.error - b.error || a.name.localeCompare(b.name);
+            });
+            const tbody = document.getElementById('score-body');
+            tbody.innerHTML = '';
+            people.forEach(function(person, rank) {
+                const tr = document.createElement('tr');
+                tr.dataset.name = person.name;
+                tr.innerHTML =
+                    '<td>' + (rank + 1) + '</td>' +
+                    '<td class="font-medium text-white">' + person.name + '</td>' +
+                    '<td class="num">' + person.y.toFixed(2) + '"</td>' +
+                    '<td class="num">' + inchOffLabel(person.diff) + '</td>' +
+                    '<td class="num font-semibold text-white">' + person.error.toFixed(2) + '</td>';
+                tr.addEventListener('click', function() { highlightPrecip(person.name); });
+                tbody.appendChild(tr);
+            });
         }
 
         function initializeTracker() {

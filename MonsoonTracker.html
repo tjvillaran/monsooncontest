@@ -88,6 +88,11 @@
             font-weight: 700;
             color: #fb923c;
         }
+        .score-scroll { max-height: 32rem; overflow: auto; }
+        .score-table thead th { position: sticky; top: 0; z-index: 2; background: #0f172a; }
+        .score-table tbody tr { cursor: pointer; }
+        .score-table tbody tr.selected { background: rgba(250, 204, 21, 0.16); box-shadow: inset 3px 0 0 #facc15; }
+        .score-table .num { font-variant-numeric: tabular-nums; text-align: right; }
         .prediction-modal {
             background: #0f172a;
             border: 1px solid rgba(148, 163, 184, 0.2);
@@ -174,10 +179,34 @@
                     <div class="font-semibold tracking-tight">Dew Point Progression</div>
                     <div class="viz-label text-orange-400">54°F threshold • Actuals vs Forecasts</div>
                 </div>
-                <div class="text-xs text-slate-500 hidden md:block">Click orange triangles to see who predicted that date</div>
+                <div class="text-xs text-slate-500 hidden md:block">Click a name below to highlight their triangle</div>
             </div>
             <div class="relative" style="height: 78vh;">
                 <canvas id="monsoonChart"></canvas>
+            </div>
+        </div>
+
+        <div class="mb-8">
+            <div class="flex items-center gap-x-2 mb-3 px-1">
+                <div class="font-semibold tracking-tight">Onset Standings</div>
+                <div class="h-px flex-1 bg-white/10"></div>
+            </div>
+            <p class="text-sm text-slate-400 mb-3 px-1">Actual onset <span id="score-actual" class="text-white">—</span>. Days off is versus that date. Error is the day difference squared. Click a name to highlight their triangle.</p>
+            <div class="bg-slate-900/60 border border-white/10 rounded-3xl overflow-hidden">
+                <div class="score-scroll">
+                    <table class="stats-table score-table">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Forecaster</th>
+                                <th class="num">Prediction</th>
+                                <th class="num">Days off</th>
+                                <th class="num">Error</th>
+                            </tr>
+                        </thead>
+                        <tbody id="score-body"></tbody>
+                    </table>
+                </div>
             </div>
         </div>
 
@@ -442,8 +471,21 @@
                             backgroundColor: '#fb923c',
                             borderColor: '#fb923c',
                             pointStyle: 'triangle',
-                            pointRadius: 9,
-                            pointHoverRadius: 13,
+                            pointRadius: function(context) {
+                                return context.dataIndex === highlightedOnsetIndex ? 16 : 9;
+                            },
+                            pointHoverRadius: function(context) {
+                                return context.dataIndex === highlightedOnsetIndex ? 18 : 13;
+                            },
+                            pointBackgroundColor: function(context) {
+                                return context.dataIndex === highlightedOnsetIndex ? '#facc15' : '#fb923c';
+                            },
+                            pointBorderColor: function(context) {
+                                return context.dataIndex === highlightedOnsetIndex ? '#ffffff' : '#fb923c';
+                            },
+                            pointBorderWidth: function(context) {
+                                return context.dataIndex === highlightedOnsetIndex ? 3 : 0;
+                            },
                             showLine: false
                         }
                     ]
@@ -523,7 +565,7 @@
                 }
             };
 
-            new Chart(ctx, {
+            monsoonChart = new Chart(ctx, {
                 type: config.type,
                 data: config.data,
                 options: config.options,
@@ -557,6 +599,72 @@
                         ctx2.restore();
                     }
                 }]
+            });
+            buildOnsetScoreTable();
+        }
+
+        let monsoonChart = null;
+        let highlightedOnsetIndex = null;
+
+        function findOnsetIndex(actual) {
+            for (let i = 0; i < actual.length - 2; i++) {
+                const a = actual[i], b = actual[i + 1], c = actual[i + 2];
+                if (a != null && b != null && c != null && a >= 54 && b >= 54 && c >= 54) return i;
+            }
+            return null;
+        }
+
+        function dayOffLabel(diff) {
+            if (diff === 0) return 'Exact';
+            if (diff > 0) return diff + ' late';
+            return Math.abs(diff) + ' early';
+        }
+
+        function highlightOnset(idx) {
+            highlightedOnsetIndex = highlightedOnsetIndex === idx ? null : idx;
+            document.querySelectorAll('#score-body tr').forEach(function(row) {
+                row.classList.toggle('selected', highlightedOnsetIndex !== null && Number(row.dataset.index) === highlightedOnsetIndex);
+            });
+            if (monsoonChart) monsoonChart.update();
+            if (highlightedOnsetIndex !== null) {
+                document.getElementById('monsoonChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function buildOnsetScoreTable() {
+            const actualIdx = findOnsetIndex(monsoonData.actual || []);
+            const actualLabel = actualIdx == null ? '—' : monsoonData.labels[actualIdx];
+            document.getElementById('score-actual').textContent = actualLabel;
+            const people = [];
+            (monsoonData.prediction_names || []).forEach(function(names, idx) {
+                (names || []).forEach(function(name) {
+                    if (!name || actualIdx == null) return;
+                    const diff = idx - actualIdx;
+                    people.push({
+                        name: name,
+                        idx: idx,
+                        label: monsoonData.labels[idx],
+                        diff: diff,
+                        error: Math.abs(diff) * Math.abs(diff)
+                    });
+                });
+            });
+            people.sort(function(a, b) {
+                return a.error - b.error || a.name.localeCompare(b.name);
+            });
+            const tbody = document.getElementById('score-body');
+            tbody.innerHTML = '';
+            people.forEach(function(person, rank) {
+                const tr = document.createElement('tr');
+                tr.dataset.index = person.idx;
+                tr.innerHTML =
+                    '<td>' + (rank + 1) + '</td>' +
+                    '<td class="font-medium text-white">' + person.name + '</td>' +
+                    '<td class="num">' + person.label + '</td>' +
+                    '<td class="num">' + dayOffLabel(person.diff) + '</td>' +
+                    '<td class="num font-semibold text-white">' + person.error + '</td>';
+                tr.addEventListener('click', function() { highlightOnset(person.idx); });
+                tbody.appendChild(tr);
             });
         }
 
