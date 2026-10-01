@@ -97,85 +97,179 @@
         <p id="empty" class="hidden text-sm text-slate-500 mt-4">No forecaster matches that name.</p>
     </main>
 
-    <script src="standings_data.js"></script>
+    <script src="data.js"></script>
+    <script src="ts_data.js"></script>
+    <script src="precip_data.js"></script>
     <script>
-        function dayLabel(idx) {
-            if (idx == null) return "—";
-            const d = new Date(2026, 5, 1 + idx);
-            return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        function labelAt(labels, idx) {
+            if (idx == null || idx < 0) return "—";
+            if (labels && labels[idx]) return labels[idx];
+            return "Day " + idx;
         }
         function inches(v) {
-            return v == null ? "—" : Number(v).toFixed(2) + '"';
+            return v == null || Number.isNaN(v) ? "—" : Number(v).toFixed(2) + '"';
         }
         function err(v) {
-            return v == null ? "—" : Number(v).toFixed(2);
+            return v == null || Number.isNaN(v) ? "—" : Number(v).toFixed(2);
         }
-
-        const data = window.standingsData;
-        const meta = data.meta;
-        const onsetDate = dayLabel(meta.onset_day);
-        const tstmDate = dayLabel(meta.tstm_day);
-        const actualOnset = dayLabel(meta.onset_actual_idx);
-        const actualTstm = dayLabel(meta.tstm_actual_idx);
-
-        document.getElementById("consensus-hero").innerHTML = `
-            <div class="md:col-span-1 rounded-3xl border border-orange-400/30 bg-orange-500/10 p-5">
-                <div class="text-xs uppercase tracking-widest text-orange-300 mb-2">Consensus rank</div>
-                <div class="text-4xl heading-font text-white">${data.consensus_rank}<span class="text-lg text-slate-400"> / ${data.results.length}</span></div>
-                <div class="text-sm text-slate-300 mt-2">Average of the field. Dates snapped to a whole day.</div>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
-                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Onset</div>
-                <div class="text-2xl heading-font text-white">${onsetDate}</div>
-                <div class="text-sm text-slate-400 mt-1">Field mean ${meta.onset_mean}, rounded. Actual ${actualOnset}.</div>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
-                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">First lightning</div>
-                <div class="text-2xl heading-font text-white">${tstmDate}</div>
-                <div class="text-sm text-slate-400 mt-1">Field mean ${meta.tstm_mean}, rounded. Actual ${actualTstm}.</div>
-            </div>
-            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
-                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Season precip</div>
-                <div class="text-2xl heading-font text-white">${Number(meta.precip_mean).toFixed(2)}"</div>
-                <div class="text-sm text-slate-400 mt-1">Actual ${Number(meta.precip_actual).toFixed(2)}". Modified SD ${meta.modified_sd}".</div>
-            </div>
-        `;
-
-        const tbody = document.getElementById("rows");
-        const empty = document.getElementById("empty");
-
-        function render(query) {
-            const q = (query || "").trim().toLowerCase();
-            tbody.innerHTML = "";
-            let shown = 0;
-            data.results.forEach((row, i) => {
-                const rank = i + 1;
-                if (q && !row.name.toLowerCase().includes(q)) return;
-                shown += 1;
-                const tr = document.createElement("tr");
-                if (row.is_consensus) tr.className = "row-consensus";
-                else if (rank === 1) tr.className = "row-winner";
-                const badge = row.is_consensus
-                    ? '<span class="ml-2 text-[10px] uppercase tracking-wider text-orange-300 border border-orange-400/40 rounded-full px-2 py-0.5">Avg</span>'
-                    : (rank === 1 ? '<span class="ml-2 text-amber-300"><i class="fa-solid fa-trophy text-xs"></i></span>' : "");
-                tr.innerHTML = `
-                    <td class="num text-slate-400">${rank}</td>
-                    <td class="font-medium text-white">${row.name}${badge}</td>
-                    <td class="num text-right text-slate-300">${dayLabel(row.onset_idx)}</td>
-                    <td class="num text-right">${err(row.onset_err)}</td>
-                    <td class="num text-right text-slate-300">${dayLabel(row.tstm_idx)}</td>
-                    <td class="num text-right">${err(row.tstm_err)}</td>
-                    <td class="num text-right text-slate-300">${inches(row.precip)}</td>
-                    <td class="num text-right">${err(row.precip_err)}</td>
-                    <td class="num text-right font-semibold text-white">${err(row.total)}</td>
-                `;
-                tbody.appendChild(tr);
+        function showError(message) {
+            document.getElementById("consensus-hero").innerHTML =
+                '<div class="md:col-span-4 rounded-3xl border border-red-400/30 bg-red-500/10 p-5 text-red-200">' + message + "</div>";
+            document.getElementById("rows").innerHTML =
+                '<tr><td colspan="9" class="p-6 text-slate-400">' + message + "</td></tr>";
+        }
+        function picksByDay(nameLists) {
+            const map = {};
+            (nameLists || []).forEach(function (names, idx) {
+                (names || []).forEach(function (name) {
+                    if (name && map[name] == null) map[name] = idx;
+                });
             });
-            empty.classList.toggle("hidden", shown !== 0);
+            return map;
+        }
+        function firstThreeDayOnset(actual) {
+            for (let i = 0; i < actual.length - 2; i++) {
+                const a = actual[i], b = actual[i + 1], c = actual[i + 2];
+                if (a != null && b != null && c != null && a >= 54 && b >= 54 && c >= 54) return i;
+            }
+            return null;
+        }
+        function sampleStdev(values) {
+            if (values.length < 2) return 1;
+            const mean = values.reduce(function (s, v) { return s + v; }, 0) / values.length;
+            const ss = values.reduce(function (s, v) { return s + (v - mean) * (v - mean); }, 0);
+            return Math.sqrt(ss / (values.length - 1));
+        }
+        function nearestDay(indexes) {
+            const mean = indexes.reduce(function (s, v) { return s + v; }, 0) / indexes.length;
+            return { mean: mean, day: Math.round(mean) };
         }
 
-        document.getElementById("filter").addEventListener("input", (e) => render(e.target.value));
-        render("");
+        if (typeof monsoonData === "undefined" || typeof tsData === "undefined" || typeof precipData === "undefined") {
+            showError("Forecast files did not load. This page reads data.js, ts_data.js, and precip_data.js from the same folder as the trackers.");
+        } else {
+            const onsetPicks = picksByDay(monsoonData.prediction_names);
+            const tstmPicks = picksByDay(tsData.prediction_names);
+            const precipPicks = {};
+            (precipData.prediction_points || []).forEach(function (point) {
+                const names = point.names || (point.name ? [point.name] : []);
+                names.forEach(function (name) {
+                    if (name && point.y != null) precipPicks[name] = point.y;
+                });
+            });
+
+            const onsetActualIdx = firstThreeDayOnset(monsoonData.actual || []);
+            const tstmActualIdx = (tsData.actual || []).findIndex(function (v) { return v != null; });
+            const precipFilled = (precipData.actual_2026 || []).filter(function (v) { return v != null; });
+            const precipActual = precipFilled.length ? precipFilled[precipFilled.length - 1] : null;
+            const precipValues = Object.keys(precipPicks).map(function (name) { return precipPicks[name]; });
+            const precipMean = precipValues.reduce(function (s, v) { return s + v; }, 0) / precipValues.length;
+            const below = precipValues.filter(function (v) { return v < precipMean; });
+            const modSd = sampleStdev(below);
+            const onsetConsensus = nearestDay(Object.keys(onsetPicks).map(function (name) { return onsetPicks[name]; }));
+            const tstmConsensus = nearestDay(Object.keys(tstmPicks).map(function (name) { return tstmPicks[name]; }));
+
+            const names = {};
+            Object.keys(onsetPicks).forEach(function (n) { names[n] = true; });
+            Object.keys(tstmPicks).forEach(function (n) { names[n] = true; });
+            Object.keys(precipPicks).forEach(function (n) { names[n] = true; });
+
+            function scorePerson(person) {
+                const onsetErr = person.onsetIdx == null ? null : Math.pow(Math.abs(person.onsetIdx - onsetActualIdx), 2);
+                const tstmHours = person.tstmIdx == null ? null : Math.abs(person.tstmIdx - tstmActualIdx) * 24;
+                const tstmErr = tstmHours == null ? null : Math.sqrt(tstmHours);
+                const precipErr = person.precip == null || precipActual == null ? null : Math.abs(person.precip - precipActual) / modSd;
+                const total = [onsetErr, tstmErr, precipErr].reduce(function (s, v) { return s + (v == null ? 0 : v); }, 0);
+                return {
+                    name: person.name,
+                    isConsensus: !!person.isConsensus,
+                    onsetIdx: person.onsetIdx,
+                    tstmIdx: person.tstmIdx,
+                    precip: person.precip,
+                    onsetErr: onsetErr,
+                    tstmErr: tstmErr,
+                    precipErr: precipErr,
+                    total: total
+                };
+            }
+
+            const rows = Object.keys(names).map(function (name) {
+                return scorePerson({
+                    name: name,
+                    onsetIdx: onsetPicks[name],
+                    tstmIdx: tstmPicks[name],
+                    precip: precipPicks[name]
+                });
+            });
+            rows.push(scorePerson({
+                name: "Consensus",
+                isConsensus: true,
+                onsetIdx: onsetConsensus.day,
+                tstmIdx: tstmConsensus.day,
+                precip: precipMean
+            }));
+            rows.sort(function (a, b) {
+                if (a.total !== b.total) return a.total - b.total;
+                if (a.isConsensus !== b.isConsensus) return a.isConsensus ? -1 : 1;
+                return a.name.localeCompare(b.name);
+            });
+            const consensusRank = rows.findIndex(function (row) { return row.isConsensus; }) + 1;
+
+            document.getElementById("consensus-hero").innerHTML =
+                '<div class="rounded-3xl border border-orange-400/30 bg-orange-500/10 p-5">' +
+                    '<div class="text-xs uppercase tracking-widest text-orange-300 mb-2">Consensus rank</div>' +
+                    '<div class="text-4xl heading-font text-white">' + consensusRank + '<span class="text-lg text-slate-400"> / ' + rows.length + '</span></div>' +
+                    '<div class="text-sm text-slate-300 mt-2">Average of the forecasts on the tracker pages. Dates snapped to a whole day.</div>' +
+                '</div>' +
+                '<div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">' +
+                    '<div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Onset</div>' +
+                    '<div class="text-2xl heading-font text-white">' + labelAt(monsoonData.labels, onsetConsensus.day) + '</div>' +
+                    '<div class="text-sm text-slate-400 mt-1">Field mean ' + onsetConsensus.mean.toFixed(2) + ', rounded. Actual ' + labelAt(monsoonData.labels, onsetActualIdx) + '.</div>' +
+                '</div>' +
+                '<div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">' +
+                    '<div class="text-xs uppercase tracking-widest text-slate-500 mb-2">First lightning</div>' +
+                    '<div class="text-2xl heading-font text-white">' + labelAt(tsData.labels, tstmConsensus.day) + '</div>' +
+                    '<div class="text-sm text-slate-400 mt-1">Field mean ' + tstmConsensus.mean.toFixed(2) + ', rounded. Actual ' + labelAt(tsData.labels, tstmActualIdx) + '.</div>' +
+                '</div>' +
+                '<div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">' +
+                    '<div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Season precip</div>' +
+                    '<div class="text-2xl heading-font text-white">' + precipMean.toFixed(2) + '"</div>' +
+                    '<div class="text-sm text-slate-400 mt-1">Actual ' + Number(precipActual).toFixed(2) + '". Modified SD ' + modSd.toFixed(2) + '".</div>' +
+                '</div>';
+
+            const tbody = document.getElementById("rows");
+            const empty = document.getElementById("empty");
+            function render(query) {
+                const q = (query || "").trim().toLowerCase();
+                tbody.innerHTML = "";
+                let shown = 0;
+                rows.forEach(function (row, i) {
+                    const rank = i + 1;
+                    if (q && row.name.toLowerCase().indexOf(q) === -1) return;
+                    shown += 1;
+                    const tr = document.createElement("tr");
+                    if (row.isConsensus) tr.className = "row-consensus";
+                    else if (rank === 1) tr.className = "row-winner";
+                    const badge = row.isConsensus
+                        ? '<span class="ml-2 text-[10px] uppercase tracking-wider text-orange-300 border border-orange-400/40 rounded-full px-2 py-0.5">Avg</span>'
+                        : (rank === 1 ? '<span class="ml-2 text-amber-300"><i class="fa-solid fa-trophy text-xs"></i></span>' : "");
+                    tr.innerHTML =
+                        '<td class="num text-slate-400">' + rank + '</td>' +
+                        '<td class="font-medium text-white">' + row.name + badge + '</td>' +
+                        '<td class="num text-right text-slate-300">' + labelAt(monsoonData.labels, row.onsetIdx) + '</td>' +
+                        '<td class="num text-right">' + err(row.onsetErr) + '</td>' +
+                        '<td class="num text-right text-slate-300">' + labelAt(tsData.labels, row.tstmIdx) + '</td>' +
+                        '<td class="num text-right">' + err(row.tstmErr) + '</td>' +
+                        '<td class="num text-right text-slate-300">' + inches(row.precip) + '</td>' +
+                        '<td class="num text-right">' + err(row.precipErr) + '</td>' +
+                        '<td class="num text-right font-semibold text-white">' + err(row.total) + '</td>';
+                    tbody.appendChild(tr);
+                });
+                empty.classList.toggle("hidden", shown !== 0);
+            }
+            document.getElementById("filter").addEventListener("input", function (e) { render(e.target.value); });
+            render("");
+        }
     </script>
 </body>
 </html>
