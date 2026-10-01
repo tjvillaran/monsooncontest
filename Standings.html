@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2026 Standings • Monsoon Prediction Competition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Space+Grotesk:wght@500;600&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .heading-font { font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif; font-weight: 600; letter-spacing: -0.025em; }
+        .nav-link { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .nav-link:hover { color: #f97316; transform: translateY(-1px); }
+        .row-consensus { background: rgba(249, 115, 22, 0.12); box-shadow: inset 3px 0 0 #f97316; }
+        .row-winner { background: rgba(56, 189, 248, 0.08); }
+        .standings-table th, .standings-table td { padding: 12px 14px; white-space: nowrap; }
+        .standings-table tbody tr { border-bottom: 1px solid rgba(148, 163, 184, 0.12); }
+        .standings-table tbody tr:hover { background: rgba(255, 255, 255, 0.04); }
+        .num { font-variant-numeric: tabular-nums; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-200 antialiased">
+    <nav class="fixed top-0 left-0 right-0 z-50 border-b border-white/10 bg-slate-950/95 backdrop-blur-md">
+        <div class="max-w-screen-2xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center gap-x-2.5">
+                <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-lg shadow-orange-950/50">
+                    <i class="fa-solid fa-cloud-bolt text-white text-xl"></i>
+                </div>
+                <div>
+                    <div class="font-semibold text-lg tracking-tighter heading-font">2026 MPC</div>
+                    <div class="text-[10px] text-slate-500 -mt-1">MONSOON PREDICTION COMPETITION</div>
+                </div>
+            </a>
+            <div class="hidden md:flex items-center gap-x-8 text-sm">
+                <a href="index.html" class="nav-link text-slate-300 hover:text-white font-medium">Home</a>
+                <a href="MonsoonTracker.html" class="nav-link text-slate-300 hover:text-white font-medium">Onset</a>
+                <a href="MonsoonTrackerTSTM.html" class="nav-link text-slate-300 hover:text-white font-medium">Lightning</a>
+                <a href="MonsoonTrackerPrecip.html" class="nav-link text-slate-300 hover:text-white font-medium">Precip</a>
+                <a href="Standings.html" class="nav-link text-white font-medium">Standings</a>
+            </div>
+            <a href="index.html#enter" class="hidden md:inline-flex items-center gap-x-2 px-4 py-2 rounded-2xl bg-white text-slate-950 font-semibold text-sm hover:bg-amber-100 transition-colors">Enter Forecast</a>
+            <a href="index.html" class="md:hidden text-sm text-slate-300">Home</a>
+        </div>
+    </nav>
+
+    <main class="pt-24 max-w-screen-2xl mx-auto px-6 pb-16">
+        <div class="max-w-3xl pt-6 pb-8">
+            <div class="inline-flex items-center px-3 py-1 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-orange-400 text-xs font-semibold tracking-[1.5px] mb-3">2026 RESULTS</div>
+            <h1 class="text-4xl md:text-5xl font-semibold tracking-tighter heading-font mb-3">How the field scored</h1>
+            <p class="text-lg text-slate-400 max-w-2xl">Lowest total error wins. The consensus forecaster is the average of every submitted forecast, with dates kept to the day someone could actually pick.</p>
+        </div>
+
+        <div id="consensus-hero" class="grid md:grid-cols-4 gap-4 mb-8"></div>
+
+        <div class="grid md:grid-cols-3 gap-4 mb-8">
+            <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Onset error</div>
+                <div class="text-sm text-slate-300">Absolute day difference, squared.</div>
+            </div>
+            <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Lightning error</div>
+                <div class="text-sm text-slate-300">Absolute hour difference, then the square root. One day is 24 hours.</div>
+            </div>
+            <div class="rounded-3xl border border-white/10 bg-slate-900/60 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Precip error</div>
+                <div class="text-sm text-slate-300">Absolute inch difference, divided by a modified standard deviation: only forecasts below the mean.</div>
+            </div>
+        </div>
+
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-4">
+            <div>
+                <div class="font-semibold tracking-tight">Full rack and stack</div>
+                <div class="text-sm text-slate-500">Consensus row is highlighted. Winner is marked.</div>
+            </div>
+            <input id="filter" type="search" placeholder="Find a forecaster" class="bg-slate-900 border border-white/10 rounded-2xl px-4 py-2 text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-orange-400/60 w-full md:w-64">
+        </div>
+
+        <div class="rounded-3xl border border-white/10 bg-slate-900/40 overflow-x-auto">
+            <table class="standings-table w-full text-sm text-left">
+                <thead class="text-xs uppercase tracking-wider text-slate-500 bg-slate-950/80">
+                    <tr>
+                        <th>Rank</th>
+                        <th>Forecaster</th>
+                        <th class="text-right">Onset</th>
+                        <th class="text-right">Err</th>
+                        <th class="text-right">Lightning</th>
+                        <th class="text-right">Err</th>
+                        <th class="text-right">Precip</th>
+                        <th class="text-right">Err</th>
+                        <th class="text-right">Total</th>
+                    </tr>
+                </thead>
+                <tbody id="rows"></tbody>
+            </table>
+        </div>
+        <p id="empty" class="hidden text-sm text-slate-500 mt-4">No forecaster matches that name.</p>
+    </main>
+
+    <script src="standings_data.js"></script>
+    <script>
+        function dayLabel(idx) {
+            if (idx == null) return "—";
+            const d = new Date(2026, 5, 1 + idx);
+            return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+        }
+        function inches(v) {
+            return v == null ? "—" : Number(v).toFixed(2) + '"';
+        }
+        function err(v) {
+            return v == null ? "—" : Number(v).toFixed(2);
+        }
+
+        const data = window.standingsData;
+        const meta = data.meta;
+        const onsetDate = dayLabel(meta.onset_day);
+        const tstmDate = dayLabel(meta.tstm_day);
+        const actualOnset = dayLabel(meta.onset_actual_idx);
+        const actualTstm = dayLabel(meta.tstm_actual_idx);
+
+        document.getElementById("consensus-hero").innerHTML = `
+            <div class="md:col-span-1 rounded-3xl border border-orange-400/30 bg-orange-500/10 p-5">
+                <div class="text-xs uppercase tracking-widest text-orange-300 mb-2">Consensus rank</div>
+                <div class="text-4xl heading-font text-white">${data.consensus_rank}<span class="text-lg text-slate-400"> / ${data.results.length}</span></div>
+                <div class="text-sm text-slate-300 mt-2">Average of the field. Dates snapped to a whole day.</div>
+            </div>
+            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Onset</div>
+                <div class="text-2xl heading-font text-white">${onsetDate}</div>
+                <div class="text-sm text-slate-400 mt-1">Field mean ${meta.onset_mean}, rounded. Actual ${actualOnset}.</div>
+            </div>
+            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">First lightning</div>
+                <div class="text-2xl heading-font text-white">${tstmDate}</div>
+                <div class="text-sm text-slate-400 mt-1">Field mean ${meta.tstm_mean}, rounded. Actual ${actualTstm}.</div>
+            </div>
+            <div class="rounded-3xl border border-white/10 bg-slate-900/70 p-5">
+                <div class="text-xs uppercase tracking-widest text-slate-500 mb-2">Season precip</div>
+                <div class="text-2xl heading-font text-white">${Number(meta.precip_mean).toFixed(2)}"</div>
+                <div class="text-sm text-slate-400 mt-1">Actual ${Number(meta.precip_actual).toFixed(2)}". Modified SD ${meta.modified_sd}".</div>
+            </div>
+        `;
+
+        const tbody = document.getElementById("rows");
+        const empty = document.getElementById("empty");
+
+        function render(query) {
+            const q = (query || "").trim().toLowerCase();
+            tbody.innerHTML = "";
+            let shown = 0;
+            data.results.forEach((row, i) => {
+                const rank = i + 1;
+                if (q && !row.name.toLowerCase().includes(q)) return;
+                shown += 1;
+                const tr = document.createElement("tr");
+                if (row.is_consensus) tr.className = "row-consensus";
+                else if (rank === 1) tr.className = "row-winner";
+                const badge = row.is_consensus
+                    ? '<span class="ml-2 text-[10px] uppercase tracking-wider text-orange-300 border border-orange-400/40 rounded-full px-2 py-0.5">Avg</span>'
+                    : (rank === 1 ? '<span class="ml-2 text-amber-300"><i class="fa-solid fa-trophy text-xs"></i></span>' : "");
+                tr.innerHTML = `
+                    <td class="num text-slate-400">${rank}</td>
+                    <td class="font-medium text-white">${row.name}${badge}</td>
+                    <td class="num text-right text-slate-300">${dayLabel(row.onset_idx)}</td>
+                    <td class="num text-right">${err(row.onset_err)}</td>
+                    <td class="num text-right text-slate-300">${dayLabel(row.tstm_idx)}</td>
+                    <td class="num text-right">${err(row.tstm_err)}</td>
+                    <td class="num text-right text-slate-300">${inches(row.precip)}</td>
+                    <td class="num text-right">${err(row.precip_err)}</td>
+                    <td class="num text-right font-semibold text-white">${err(row.total)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            empty.classList.toggle("hidden", shown !== 0);
+        }
+
+        document.getElementById("filter").addEventListener("input", (e) => render(e.target.value));
+        render("");
+    </script>
+</body>
+</html>
